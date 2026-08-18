@@ -6,7 +6,6 @@
 
 <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
 <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -59,21 +58,9 @@ body {
   background-color: #004080;
 }
 
-.charts-container {
-  display: flex;
-  gap: 30px;
+.mindmap {
   margin-top: 30px;
-}
-
-.chart-box {
-  flex: 1;
-  text-align: center;
-}
-
-.chart-box p {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #444;
+  width: 100%;
 }
 
 pre {
@@ -98,8 +85,8 @@ pre {
   <p>Für die Analyse werden folgende Dateien benötigt:</p>
 
   <p>
-    &#9989; Letzte Bilanz bzw. Bilanzen<br>
-    &#9989; Letzte GuV bzw. GuV-Konten
+    Letzte Bilanz<br>
+    Letzte GuV
   </p>
 
   <div class="hint">
@@ -109,16 +96,38 @@ pre {
 
 <button id="startButton">Finanzanalyse starten</button>
 
-<div class="charts-container">
-  <div class="chart-box">
-    <canvas id="lineChart"></canvas>
-    <p>GuV Entwicklung über das letzte Jahr</p>
-  </div>
-  <div class="chart-box">
-    <canvas id="pieChart"></canvas>
-    <p>Vermögens- und Fremdkapital Aufteilung</p>
-  </div>
-</div>
+<svg class="mindmap" viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <text x="450" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">Auf was wir testen</text>
+
+  <!-- Verbindungslinien -->
+  <line x1="450" y1="270" x2="450" y2="90" stroke="#4a90e2" stroke-width="2"/>
+  <line x1="450" y1="270" x2="638" y2="208" stroke="#4a90e2" stroke-width="2"/>
+  <line x1="450" y1="270" x2="566" y2="428" stroke="#4a90e2" stroke-width="2"/>
+  <line x1="450" y1="270" x2="334" y2="428" stroke="#4a90e2" stroke-width="2"/>
+  <line x1="450" y1="270" x2="262" y2="208" stroke="#4a90e2" stroke-width="2"/>
+
+  <!-- Äußere Blasen -->
+  <circle cx="450" cy="70" r="48" fill="#4a90e2"/>
+  <text x="450" y="74" text-anchor="middle" dominant-baseline="middle" font-size="15" fill="white">GuV</text>
+
+  <circle cx="650" cy="200" r="55" fill="#4a90e2"/>
+  <text x="650" y="195" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">Anlage-</text>
+  <text x="650" y="212" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">verm&#246;gen</text>
+
+  <circle cx="570" cy="445" r="55" fill="#4a90e2"/>
+  <text x="570" y="440" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">Umlauf-</text>
+  <text x="570" y="457" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">verm&#246;gen</text>
+
+  <circle cx="330" cy="445" r="55" fill="#4a90e2"/>
+  <text x="330" y="449" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">Eigenkapital</text>
+
+  <circle cx="250" cy="200" r="55" fill="#4a90e2"/>
+  <text x="250" y="204" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="white">Fremdkapital</text>
+
+  <!-- Mittelblase (zuletzt = obendrauf) -->
+  <circle cx="450" cy="270" r="72" fill="#005fb8"/>
+  <text x="450" y="274" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="bold" fill="white">Finanzanalyse</text>
+</svg>
 
 <h3>Geladene Datei:</h3>
 <pre id="output"></pre>
@@ -160,34 +169,6 @@ dropzone.addEventListener("drop", e => {
   }
 });
 
-new Chart(document.getElementById("lineChart"), {
-  type: "line",
-  data: {
-    labels: [],
-    datasets: [{
-      data: [],
-      borderColor: "#4a90e2",
-      backgroundColor: "rgba(74,144,226,0.1)",
-      fill: true
-    }]
-  },
-  options: {
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { title: { display: true, text: "Monat" } },
-      y: { title: { display: true, text: "Ergebnis (€)" } }
-    }
-  }
-});
-
-new Chart(document.getElementById("pieChart"), {
-  type: "pie",
-  data: {
-    labels: ["Eigenkapital", "Fremdkapital"],
-    datasets: [{ data: [1, 1], backgroundColor: ["#4a90e2", "#e24a4a"] }]
-  },
-  options: { plugins: { legend: { position: "bottom" } } }
-});
 </script>
 
 <script type="py">
