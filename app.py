@@ -38,7 +38,7 @@ def lade_und_filtere(daten: list) -> list:
     
 
 
-async def analyse_starten(event):
+async def Finanzanalyse_starten(event):
     bilanz_text = document.getElementById("data-bilanz").textContent
     guv_text    = document.getElementById("data-guv").textContent
     output      = document.getElementById("output")
@@ -68,4 +68,4 @@ async def analyse_starten(event):
     )
 
 
-document.getElementById("startButton").addEventListener("click", analyse_starten)
+document.getElementById("startButton").addEventListener("click", Finanzanalyse_starten)
