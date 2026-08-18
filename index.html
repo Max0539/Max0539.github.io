@@ -1,213 +1,160 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
-<head>
-    <title>Finanzanalyse</title>
-
-    <link rel="stylesheet"
-          href="https://pyscript.net/releases/2025.5.1/core.css">
-
-    <script type="module"
-            src="https://pyscript.net/releases/2025.5.1/core.js">
-    </script>
-</head>
-<body>
-
-<h1>Hello PyScript</h1>
- 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Finanzanalyse</title>
-
-    <link rel="stylesheet"
-          href="https://pyscript.net/releases/2025.5.1/core.css">
-
-    <script type="module"
-            src="https://pyscript.net/releases/2025.5.1/core.js">
-    </script>
-</head>
-<body>
-
-<h1>Hello PyScript</h1>
- 
-<!DOCTYPE html>
-2
-<html>
-3
-<head>
-4
-<title>CSV Upload</title>
-5
  
-6
+<head>
+<title>Finanzanalyse</title>
+ 
 <link rel="stylesheet"
-7
 href="https://pyscript.net/releases/2025.5.1/core.css">
-8
  
-9
-<script type="module"
-10
-src="https://pyscript.net/releases/2025.5.1/core.js">
-11
-</script>
-12
+<script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
  
-13
 <style>
-14
+body {
+font-family: Arial, sans-serif;
+margin: 30px;
+}
+ 
 #dropzone {
-15
-width: 400px;
-16
-height: 200px;
-17
+width: 600px;
+min-height: 250px;
 border: 3px dashed #4a90e2;
-18
-border-radius: 10px;
-19
-display: flex;
-20
-justify-content: center;
-21
-align-items: center;
-22
-margin: 20px 0;
-23
-font-size: 18px;
-24
-color: #4a90e2;
-25
+border-radius: 12px;
+padding: 20px;
+text-align: center;
+background-color: #fafafa;
+color: #333;
+margin-top: 20px;
 }
-26
  
-27
 #dropzone.dragover {
-28
 background-color: #eef6ff;
-29
+border-color: #005fb8;
 }
-30
  
-31
+#dropzone strong {
+font-size: 22px;
+color: #005fb8;
+}
+ 
+.hint {
+margin-top: 15px;
+color: #666;
+font-size: 14px;
+}
+ 
+#startButton {
+margin-top: 20px;
+padding: 10px 20px;
+font-size: 16px;
+background-color: #005fb8;
+color: white;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+}
+ 
+#startButton:hover {
+background-color: #004080;
+}
+ 
 pre {
-32
 background: #f5f5f5;
-33
 padding: 10px;
-34
+margin-top: 20px;
 overflow-x: auto;
-35
+border-radius: 6px;
 }
-36
 </style>
-37
 </head>
-38
+ 
 <body>
-39
  
-40
-<h1>CSV-Datei laden</h1>
-41
+<h1>Finanzanalyse</h1>
  
-42
-<!-- Datei auswählen -->
-43
-<input type="file" id="csvFile" accept=".csv">
-44
+<input type="file" id="csvFile" accept=".csv" multiple>
  
-45
-<!-- Drag & Drop Bereich -->
-46
 <div id="dropzone">
-47
-CSV hierher ziehen
-48
+<strong>📂 Finanzdaten hochladen</strong>
+ 
+<p>
+Für die Analyse werden folgende Dateien benötigt:
+</p>
+ 
+<p>
+✅ Letzte Bilanz bzw. Bilanzen<br>
+✅ Letzte GuV bzw. GuV-Konten
+</p>
+ 
+<div class="hint">
+CSV-Dateien per Drag & Drop hier ablegen oder über den Upload-Button auswählen.
 </div>
-49
+</div>
  
-50
-<h3>Vorschau:</h3>
-51
+<button id="startButton">
+Finanzanalyse starten
+</button>
+ 
+<h3>Geladene Datei:</h3>
 <pre id="output"></pre>
-52
  
-53
 <script>
-54
 const dropzone = document.getElementById("dropzone");
-55
 const fileInput = document.getElementById("csvFile");
-56
 const output = document.getElementById("output");
-57
  
-58
+let aktuelleDatei = null;
+ 
 async function readFile(file) {
-59
+aktuelleDatei = file;
+ 
 const text = await file.text();
-60
-output.textContent = text.substring(0, 1000);
-61
-}
-62
  
-63
+output.textContent =
+"Datei: " + file.name +
+"\n\n" +
+text.substring(0, 1000);
+}
+ 
 fileInput.addEventListener("change", e => {
-64
+if (e.target.files.length > 0) {
 readFile(e.target.files[0]);
-65
-});
-66
- 
-67
-dropzone.addEventListener("dragover", e => {
-68
-e.preventDefault();
-69
-dropzone.classList.add("dragover");
-70
-});
-71
- 
-72
-dropzone.addEventListener("dragleave", () => {
-73
-dropzone.classList.remove("dragover");
-74
-});
-75
- 
-76
-dropzone.addEventListener("drop", e => {
-77
-e.preventDefault();
-78
-dropzone.classList.remove("dragover");
-79
- 
-80
-const file = e.dataTransfer.files[0];
-81
- 
-82
-if (file && file.name.endsWith(".csv")) {
-83
-readFile(file);
-84
-} else {
-85
-alert("Bitte eine CSV-Datei auswählen.");
-86
 }
-87
 });
-88
-</script>
-89
  
-90
+dropzone.addEventListener("dragover", e => {
+e.preventDefault();
+dropzone.classList.add("dragover");
+});
+ 
+dropzone.addEventListener("dragleave", () => {
+dropzone.classList.remove("dragover");
+});
+ 
+dropzone.addEventListener("drop", e => {
+e.preventDefault();
+dropzone.classList.remove("dragover");
+ 
+const file = e.dataTransfer.files[0];
+ 
+if (file && file.name.toLowerCase().endsWith(".csv")) {
+readFile(file);
+} else {
+alert("Bitte eine CSV-Datei auswählen.");
+}
+});
+</script>
+ 
+<script type="py">
+from pyscript import document
+ 
+def analyse_starten(event):
+    print("Finanzanalyse wird gestartet...")
+ 
+button = document.getElementById("startButton")
+button.addEventListener("click", analyse_starten)
+</script>
+ 
 </body>
-91
+ 
 </html>
