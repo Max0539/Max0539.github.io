@@ -1,71 +1,114 @@
 ﻿from pyscript import document
+from pyodide.ffi import create_proxy
 import csv
-import asyncio
 from datetime import datetime
 
 AKTUELLES_JAHR = datetime.now().year
 
-daten=["Bilanzposition;Kategorie;Unterkategorie;Betrag_EUR;Seite;Geschaeftsjahr"
-"Immaterielle Vermögensgegenstände;Anlagevermögen;Immaterielle Vermögensgegenstände;25000;Aktiva;2025"
- "Grundstücke und Gebäude;Anlagevermögen;Sachanlagen;450000;Aktiva;2025"
- "Technische Anlagen und Maschinen;Anlagevermögen;Sachanlagen;180000;Aktiva;2025"
- "Betriebs- und Geschäftsausstattung;Anlagevermögen;Sachanlagen;75000;Aktiva;2025"
- "Beteiligungen;Finanzanlagen;Beteiligungen;50000;Aktiva;2025"
- "Vorräte;Umlaufvermögen;Vorräte;120000;Aktiva;2025"
- "Forderungen aus Lieferungen und Leistungen;Umlaufvermögen;Forderungen;95000;Aktiva;2025"
- "Sonstige Vermögensgegenstände;Umlaufvermögen;Forderungen;30000;Aktiva;2025"
- "Bankguthaben;Umlaufvermögen;Liquide Mittel;175000;Aktiva;2025"
- "Kassenbestand;Umlaufvermögen;Liquide Mittel;10000;Aktiva;2025"
- "Aktive Rechnungsabgrenzungsposten;Rechnungsabgrenzung;Aktive RAP;15000;Aktiva;2025"   
- "Gezeichnetes Kapital;Eigenkapital;Stammkapital;100000;Passiva;2025"
- "Kapitalrücklage;Eigenkapital;Kapitalrücklage;50000;Passiva;2025"
- "Gewinnrücklagen;Eigenkapital;Gewinnrücklagen;180000;Passiva;2025"
- "Rückstellungen für Pensionen;Rückstellungen;Pensionsrückstellungen;60000;Passiva;2025"
- "Sonstige Rückstellungen;Rückstellungen;Sonstige Rückstellungen;85000;Passiva;2025"
-"Verbindlichkeiten gegenüber Kreditinstituten;Verbindlichkeiten;Bankdarlehen;300000;Passiva;2025"
-"Verbindlichkeiten aus Lieferungen und Leistungen;Verbindlichkeiten;Lieferantenverbindlichkeiten;95000;Passiva;2025"
-"Sonstige Verbindlichkeiten;Verbindlichkeiten;Sonstige Verbindlichkeiten;40000;Passiva;2025"
-"Passive Rechnungsabgrenzungsposten;Rechnungsabgrenzung;Passive RAP;10000;Passiva;2025"
+daten=[
+    "Bilanzposition;Kategorie;Unterkategorie;Betrag_EUR;Seite;Geschaeftsjahr",
+    "Immaterielle Vermögensgegenstände;Anlagevermögen;Immaterielle Vermögensgegenstände;25000;Aktiva;2026",
+    "Grundstücke und Gebäude;Anlagevermögen;Sachanlagen;450000;Aktiva;2026",
+    "Technische Anlagen und Maschinen;Anlagevermögen;Sachanlagen;180000;Aktiva;2026",
+    "Betriebs- und Geschäftsausstattung;Anlagevermögen;Sachanlagen;75000;Aktiva;2026",
+    "Beteiligungen;Finanzanlagen;Beteiligungen;50000;Aktiva;2026",
+    "Vorräte;Umlaufvermögen;Vorräte;120000;Aktiva;2025",
+    "Forderungen aus Lieferungen und Leistungen;Umlaufvermögen;Forderungen;95000;Aktiva;2025",
+    "Sonstige Vermögensgegenstände;Umlaufvermögen;Forderungen;30000;Aktiva;2025",
+    "Bankguthaben;Umlaufvermögen;Liquide Mittel;175000;Aktiva;2025",
+    "Kassenbestand;Umlaufvermögen;Liquide Mittel;10000;Aktiva;2025",
+    "Aktive Rechnungsabgrenzungsposten;Rechnungsabgrenzung;Aktive RAP;15000;Aktiva;2025",
+    "Gezeichnetes Kapital;Eigenkapital;Stammkapital;100000;Passiva;2025",
+    "Kapitalrücklage;Eigenkapital;Kapitalrücklage;50000;Passiva;2025",
+    "Gewinnrücklagen;Eigenkapital;Gewinnrücklagen;180000;Passiva;2025",
+    "Rückstellungen für Pensionen;Rückstellungen;Pensionsrückstellungen;60000;Passiva;2025",
+    "Sonstige Rückstellungen;Rückstellungen;Sonstige Rückstellungen;85000;Passiva;2025",
+    "Verbindlichkeiten gegenüber Kreditinstituten;Verbindlichkeiten;Bankdarlehen;300000;Passiva;2025",
+    "Verbindlichkeiten aus Lieferungen und Leistungen;Verbindlichkeiten;Lieferantenverbindlichkeiten;95000;Passiva;2025",
+    "Sonstige Verbindlichkeiten;Verbindlichkeiten;Sonstige Verbindlichkeiten;40000;Passiva;2025",
+    "Passive Rechnungsabgrenzungsposten;Rechnungsabgrenzung;Passive RAP;10000;Passiva;2025",
 ]
 
-def parse_csv(text: str) -> list:
-    reader = csv.DictReader(text.splitlines(), delimiter=";")
+
+from pyscript import document
+import csv
+from datetime import datetime
+
+AKTUELLES_JAHR = datetime.now().year
+
+
+def parse_csv(text):
+    # CSV lesen (Semikolon)
+    clean_text = (text or "").strip().lstrip("\ufeff")
+    if not clean_text:
+        return []
+    reader = csv.DictReader(clean_text.splitlines(), delimiter=";")
     return list(reader)
 
 
-def lade_und_filtere(daten: list) -> list:
-    return [z for z in daten if z.get("Geschaeftsjahr", z.get("Geschäftsjahr", "")) == str(AKTUELLES_JAHR)]
-    
+def lade_und_filtere(daten, jahr):
+    # Nach Jahr filtern; wenn kein Treffer -> alle Daten zurück
+    gefiltert = [
+        z for z in daten
+        if z.get("Geschaeftsjahr", z.get("Geschäftsjahr", "")).strip() == str(jahr)
+    ]
+    return gefiltert if gefiltert else daten
 
 
-async def Finanzanalyse_starten(event):
-    bilanz_text = document.getElementById("data-bilanz").textContent
-    guv_text    = document.getElementById("data-guv").textContent
-    output      = document.getElementById("output")
+def zeige_loader(sichtbar):
+    loader = document.getElementById("loader")
+    if loader:
+        loader.style.display = "block" if sichtbar else "none"
 
-    if not bilanz_text.strip() or not guv_text.strip():
-        output.textContent = "Bitte Bilanz und GuV hochladen."
+
+def Finanzanalyse_starten(event=None):
+    output = document.getElementById("output")
+    bilanz_el = document.getElementById("data-bilanz")
+    guv_el = document.getElementById("data-guv")
+
+    if not output or not bilanz_el or not guv_el:
+        print("FEHLER: HTML-Elemente nicht gefunden.")
         return
 
-    bilanz = parse_csv(bilanz_text)
-    guv    = parse_csv(guv_text)
+    bilanz_text = bilanz_el.textContent or ""
+    guv_text = guv_el.textContent or ""
 
-    output.textContent = "Analysiert Unternehmen..."
-    await asyncio.sleep(3)
-    output.textContent = "Prüft Liquidität..."
-    await asyncio.sleep(2)
+    if not bilanz_text.strip() and not guv_text.strip():
+        output.textContent = "⚠️ Bitte Bilanz- und GuV-Datei hochladen."
+        return
+    if not bilanz_text.strip():
+        output.textContent = "⚠️ Bitte die Bilanz-Datei hochladen."
+        return
+    if not guv_text.strip():
+        output.textContent = "⚠️ Bitte die GuV-Datei hochladen."
+        return
 
-    bilanz = lade_und_filtere(bilanz)
-    guv    = lade_und_filtere(guv)
+    zeige_loader(True)
+    output.textContent = "⏳ Analyse läuft..."
 
-    spalten_bilanz = list(bilanz[0].keys()) if bilanz else []
-    spalten_guv    = list(guv[0].keys())    if guv    else []
+    try:
+        bilanz = parse_csv(bilanz_text)
+        guv = parse_csv(guv_text)
 
-    output.textContent = (
-        f"\u2705 Dateien erfolgreich geladen ({AKTUELLES_JAHR})\n"
-        f"Bilanz: {len(bilanz)} Zeile(n), Spalten: {', '.join(spalten_bilanz)}\n"
-        f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}\n"
-    )
+        if not bilanz:
+            output.textContent = "⚠️ Bilanz-Datei ist leer oder ungültig."
+            return
+        if not guv:
+            output.textContent = "⚠️ GuV-Datei ist leer oder ungültig."
+            return
 
+        bilanz = lade_und_filtere(bilanz, AKTUELLES_JAHR)
+        guv = lade_und_filtere(guv, AKTUELLES_JAHR)
 
-document.getElementById("startButton").addEventListener("click", Finanzanalyse_starten)
+        spalten_bilanz = list(bilanz[0].keys()) if bilanz else []
+        spalten_guv = list(guv[0].keys()) if guv else []
+
+        output.textContent = (
+            "✅ Dateien erfolgreich geladen\n"
+            f"Bilanz: {len(bilanz)} Zeile(n), Spalten: {', '.join(spalten_bilanz)}\n"
+            f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}"
+        )
+    except Exception as e:
+        output.textContent = f"❌ Fehler bei der Analyse: {e}"
+    finally:
+        zeige_loader(False)
