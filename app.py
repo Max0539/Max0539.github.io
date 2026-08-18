@@ -20,3 +20,4 @@ print(bilanz.to_string(index=False))
 print(f"\n=== GuV {AKTUELLES_JAHR} ===")
 print(guv.to_string(index=False))
 
+

@@ -97,7 +97,7 @@ pre {
     <label style="display:block; font-weight:bold; margin-bottom:8px;">📊 Bilanz</label>
     <div class="upload-zone" id="dropzone-bilanz">
       <p>Drag &amp; Drop oder</p>
-      <input type="file" id="csvBilanz" accept=".csv">
+      <input type="file" id="csvBilanz" accept=".csv" multiple>
       <div class="upload-status" id="status-bilanz"></div>
     </div>
   </div>
@@ -105,7 +105,7 @@ pre {
     <label style="display:block; font-weight:bold; margin-bottom:8px;">📈 GuV</label>
     <div class="upload-zone" id="dropzone-guv">
       <p>Drag &amp; Drop oder</p>
-      <input type="file" id="csvGuV" accept=".csv">
+      <input type="file" id="csvGuV" accept=".csv" multiple>
       <div class="upload-status" id="status-guv"></div>
     </div>
   </div>
@@ -118,35 +118,61 @@ pre {
 
 
 
-<h3>Geladene Datei:</h3>
+<h3>Upload-Protokoll:</h3>
+<pre id="upload-log"></pre>
+
+<h3>Analyseergebnis:</h3>
 <pre id="output"></pre>
 
 <script>
+const uploadLog = document.getElementById("upload-log");
+
+function logMessage(text) {
+  uploadLog.textContent += text + "\n";
+}
+
 function setupDropzone(zoneId, inputId, statusId, dataId) {
-  const zone = document.getElementById(zoneId);
-  const input = document.getElementById(inputId);
+  const zone   = document.getElementById(zoneId);
+  const input  = document.getElementById(inputId);
   const status = document.getElementById(statusId);
   const dataDiv = document.getElementById(dataId);
 
-  async function handleFile(file) {
-    if (!file || !file.name.toLowerCase().endsWith(".csv")) {
-      alert("Bitte eine CSV-Datei auswählen.");
-      return;
+  async function handleFiles(files) {
+    let combined = "";
+    let names = [];
+
+    for (const file of files) {
+      if (!file.name.toLowerCase().endsWith(".csv")) {
+        alert(file.name + " ist keine CSV-Datei.");
+        continue;
+      }
+      const text = await file.text();
+      // Bei mehreren Dateien: Kopfzeile nur beim ersten Mal übernehmen
+      if (combined === "") {
+        combined = text;
+      } else {
+        const zeilen = text.split("\n");
+        combined += "\n" + zeilen.slice(1).join("\n");
+      }
+      names.push(file.name);
+      logMessage("Datei hochgeladen: " + file.name);
     }
-    const text = await file.text();
-    dataDiv.textContent = text;
-    status.textContent = "✅ " + file.name;
+
+    if (names.length > 0) {
+      dataDiv.textContent = combined;
+      status.textContent = "✅ " + names.join(", ");
+    }
   }
 
   input.addEventListener("change", e => {
-    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    if (e.target.files.length > 0) handleFiles(e.target.files);
   });
   zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
   zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
   zone.addEventListener("drop", e => {
     e.preventDefault();
     zone.classList.remove("dragover");
-    handleFile(e.dataTransfer.files[0]);
+    handleFiles(e.dataTransfer.files);
   });
 }
 
@@ -158,18 +184,23 @@ setupDropzone("dropzone-guv",    "csvGuV",    "status-guv",    "data-guv");
 from pyscript import document
 import pandas as pd
 import io
+import asyncio
 from datetime import datetime
 
 AKTUELLES_JAHR = datetime.now().year
 
-def analyse_starten(event):
+async def analyse_starten(event):
     bilanz_text = document.getElementById("data-bilanz").textContent
     guv_text    = document.getElementById("data-guv").textContent
     output      = document.getElementById("output")
 
     if not bilanz_text.strip() or not guv_text.strip():
-        output.textContent = "Bitte beide Dateien (Bilanz und GuV) hochladen."
+        output.textContent = "Bitte Bilanz und GuV hochladen."
         return
+
+    output.textContent = "Analysiert Unternehmen..."
+    await asyncio.sleep(3)
+    output.textContent = "Prüft Liquidität..."
 
     bilanz = pd.read_csv(io.StringIO(bilanz_text), sep=";")
     guv    = pd.read_csv(io.StringIO(guv_text),    sep=";")
