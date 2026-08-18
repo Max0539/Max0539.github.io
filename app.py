@@ -112,3 +112,5 @@ def Finanzanalyse_starten(event=None):
         output.textContent = f"❌ Fehler bei der Analyse: {e}"
     finally:
         zeige_loader(False)
+
+        
