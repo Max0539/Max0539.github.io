@@ -180,44 +180,7 @@ setupDropzone("dropzone-bilanz", "csvBilanz", "status-bilanz", "data-bilanz");
 setupDropzone("dropzone-guv",    "csvGuV",    "status-guv",    "data-guv");
 </script>
 
-<script type="py">
-from pyscript import document
-import pandas as pd
-import io
-import asyncio
-from datetime import datetime
-
-AKTUELLES_JAHR = datetime.now().year
-
-async def analyse_starten(event):
-    bilanz_text = document.getElementById("data-bilanz").textContent
-    guv_text    = document.getElementById("data-guv").textContent
-    output      = document.getElementById("output")
-
-    if not bilanz_text.strip() or not guv_text.strip():
-        output.textContent = "Bitte Bilanz und GuV hochladen."
-        return
-
-    output.textContent = "Analysiert Unternehmen..."
-    await asyncio.sleep(3)
-    output.textContent = "Prüft Liquidität..."
-
-    bilanz = pd.read_csv(io.StringIO(bilanz_text), sep=";")
-    guv    = pd.read_csv(io.StringIO(guv_text),    sep=";")
-
-    if "Geschäftsjahr" in bilanz.columns:
-        bilanz = bilanz[bilanz["Geschäftsjahr"].astype(str).str.contains(str(AKTUELLES_JAHR))]
-
-    if "Geschäftsjahr" in guv.columns:
-        guv = guv[guv["Geschäftsjahr"].astype(str).str.contains(str(AKTUELLES_JAHR))]
-
-    output.textContent = (
-        f"=== Bilanz {AKTUELLES_JAHR} ===\n{bilanz.to_string(index=False)}"
-        f"\n\n=== GuV {AKTUELLES_JAHR} ===\n{guv.to_string(index=False)}"
-    )
-
-document.getElementById("startButton").addEventListener("click", analyse_starten)
-</script>
+<script type="py" src="app.py"></script>
 
 </body>
 
