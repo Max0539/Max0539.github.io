@@ -1,0 +1,68 @@
+/* ── Dark navy base with layered wave gradients ── */
+html {
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  background-color: #071A2F;
+  overflow-x: hidden;
+}
+
+/* Wave layer 1 – broad sweep from top-left */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 120% 60% at 10% 20%, #0D2E55 0%, transparent 65%),
+    radial-gradient(ellipse 90%  50% at 85% 75%, #0A2544 0%, transparent 60%),
+    radial-gradient(ellipse 70%  40% at 50% 10%, #0F3460 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* Wave layer 2 – softer mid-tones for depth */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 35% at 20% 85%, #102D50 0%, transparent 60%),
+    radial-gradient(ellipse 60% 30% at 75% 30%, #1A4A7A 0%, transparent 50%),
+    radial-gradient(ellipse 55% 25% at 40% 55%, #0C2B4E 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* ── UI component overrides for dark theme ── */
+#dropzone {
+  background-color: rgba(10, 30, 58, 0.75);
+  border-color: #2a6db5;
+  color: #c8d8ed;
+  backdrop-filter: blur(4px);
+}
+
+#dropzone.dragover {
+  background-color: rgba(18, 52, 95, 0.85);
+  border-color: #4a90e2;
+}
+
+#dropzone strong {
+  color: #7db9f0;
+}
+
+.hint {
+  color: #8aaac8;
+}
+
+pre {
+  background: rgba(8, 24, 48, 0.8);
+  color: #b8d0ec;
+  border: 1px solid #1e3a5f;
+}
+
+h1, h2, h3 {
+  color: #c8ddf5;
+}
