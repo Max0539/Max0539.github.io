@@ -37,20 +37,24 @@ body::after {
 }
 
 /* ── UI component overrides for dark theme ── */
-#dropzone {
+.upload-zone {
   background-color: rgba(10, 30, 58, 0.75);
   border-color: #2a6db5;
   color: #c8d8ed;
   backdrop-filter: blur(4px);
 }
 
-#dropzone.dragover {
+.upload-zone.dragover {
   background-color: rgba(18, 52, 95, 0.85);
   border-color: #4a90e2;
 }
 
-#dropzone strong {
+.upload-zone strong {
   color: #7db9f0;
+}
+
+.upload-status {
+  color: #5dbf8a;
 }
 
 .hint {

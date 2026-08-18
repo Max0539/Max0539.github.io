@@ -16,27 +16,39 @@ body {
   color: #e8eef6;
 }
 
-#dropzone {
-  width: 100%;
-  min-height: 250px;
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.upload-zone {
+  min-height: 180px;
   border: 3px dashed #4a90e2;
   border-radius: 12px;
   padding: 20px;
   text-align: center;
   background-color: #fafafa;
   color: #333;
-  margin-top: 20px;
   box-sizing: border-box;
+  cursor: pointer;
 }
 
-#dropzone.dragover {
+.upload-zone.dragover {
   background-color: #eef6ff;
   border-color: #005fb8;
 }
 
-#dropzone strong {
-  font-size: 22px;
+.upload-zone strong {
+  font-size: 20px;
   color: #005fb8;
+}
+
+.upload-status {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .hint {
@@ -80,22 +92,27 @@ pre {
 <h1 style="text-align:center;">Finanzanalyse</h1>
 <p style="text-align:center; color:#8aaac8; margin-top:-10px; font-size:15px;">Analysiert die liquiden Mittel und überprüft Unternehmen auf Kredittauglichkeit</p>
 
-<input type="file" id="csvFile" accept=".csv" multiple>
-
-<div id="dropzone">
-  <strong>&#128194; Finanzdaten hochladen</strong>
-
-  <p>Für die Analyse werden folgende Dateien benötigt:</p>
-
-  <p>
-    ✅ Letzte Bilanz<br>
-    ✅ Letzte GuV
-  </p>
-
-  <div class="hint">
-    CSV-Dateien per Drag &amp; Drop hier ablegen oder über den Upload-Button auswählen.
+<div class="upload-grid">
+  <div>
+    <label style="display:block; font-weight:bold; margin-bottom:8px;">📊 Bilanz</label>
+    <div class="upload-zone" id="dropzone-bilanz">
+      <p>Drag &amp; Drop oder</p>
+      <input type="file" id="csvBilanz" accept=".csv">
+      <div class="upload-status" id="status-bilanz"></div>
+    </div>
+  </div>
+  <div>
+    <label style="display:block; font-weight:bold; margin-bottom:8px;">📈 GuV</label>
+    <div class="upload-zone" id="dropzone-guv">
+      <p>Drag &amp; Drop oder</p>
+      <input type="file" id="csvGuV" accept=".csv">
+      <div class="upload-status" id="status-guv"></div>
+    </div>
   </div>
 </div>
+
+<div id="data-bilanz" style="display:none"></div>
+<div id="data-guv" style="display:none"></div>
 
 <button id="startButton">Finanzanalyse starten</button>
 
@@ -105,52 +122,70 @@ pre {
 <pre id="output"></pre>
 
 <script>
-const dropzone = document.getElementById("dropzone");
-const fileInput = document.getElementById("csvFile");
-const output = document.getElementById("output");
+function setupDropzone(zoneId, inputId, statusId, dataId) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  const status = document.getElementById(statusId);
+  const dataDiv = document.getElementById(dataId);
 
-let aktuelleDatei = null;
+  async function handleFile(file) {
+    if (!file || !file.name.toLowerCase().endsWith(".csv")) {
+      alert("Bitte eine CSV-Datei auswählen.");
+      return;
+    }
+    const text = await file.text();
+    dataDiv.textContent = text;
+    status.textContent = "✅ " + file.name;
+  }
 
-async function readFile(file) {
-  aktuelleDatei = file;
-  const text = await file.text();
-  output.textContent = "Datei: " + file.name + "\n\n" + text.substring(0, 1000);
+  input.addEventListener("change", e => {
+    if (e.target.files.length > 0) handleFile(e.target.files[0]);
+  });
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    handleFile(e.dataTransfer.files[0]);
+  });
 }
 
-fileInput.addEventListener("change", e => {
-  if (e.target.files.length > 0) readFile(e.target.files[0]);
-});
-
-dropzone.addEventListener("dragover", e => {
-  e.preventDefault();
-  dropzone.classList.add("dragover");
-});
-
-dropzone.addEventListener("dragleave", () => {
-  dropzone.classList.remove("dragover");
-});
-
-dropzone.addEventListener("drop", e => {
-  e.preventDefault();
-  dropzone.classList.remove("dragover");
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.toLowerCase().endsWith(".csv")) {
-    readFile(file);
-  } else {
-    alert("Bitte eine CSV-Datei auswählen.");
-  }
-});
-
+setupDropzone("dropzone-bilanz", "csvBilanz", "status-bilanz", "data-bilanz");
+setupDropzone("dropzone-guv",    "csvGuV",    "status-guv",    "data-guv");
 </script>
 
 <script type="py">
 from pyscript import document
+import pandas as pd
+import io
+from datetime import datetime
+
+AKTUELLES_JAHR = datetime.now().year
 
 def analyse_starten(event):
-    print("Finanzanalyse wird gestartet...")
+    bilanz_text = document.getElementById("data-bilanz").textContent
+    guv_text    = document.getElementById("data-guv").textContent
+    output      = document.getElementById("output")
 
-button = document.getElementById("startButton")
-button.addEventListener("click", analyse_starten)
+    if not bilanz_text.strip() or not guv_text.strip():
+        output.textContent = "Bitte beide Dateien (Bilanz und GuV) hochladen."
+        return
+
+    bilanz = pd.read_csv(io.StringIO(bilanz_text), sep=";")
+    guv    = pd.read_csv(io.StringIO(guv_text),    sep=";")
+
+    if "Geschäftsjahr" in bilanz.columns:
+        bilanz = bilanz[bilanz["Geschäftsjahr"].astype(str).str.contains(str(AKTUELLES_JAHR))]
+
+    if "Geschäftsjahr" in guv.columns:
+        guv = guv[guv["Geschäftsjahr"].astype(str).str.contains(str(AKTUELLES_JAHR))]
+
+    output.textContent = (
+        f"=== Bilanz {AKTUELLES_JAHR} ===\n{bilanz.to_string(index=False)}"
+        f"\n\n=== GuV {AKTUELLES_JAHR} ===\n{guv.to_string(index=False)}"
+    )
+
+document.getElementById("startButton").addEventListener("click", analyse_starten)
 </script>
 
 </body>
