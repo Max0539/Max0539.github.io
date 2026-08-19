@@ -71,6 +71,13 @@ def Finanzanalyse_starten(event=None):
         bilanz = lade_und_filtere(bilanz, AKTUELLES_JAHR)
         guv    = lade_und_filtere(guv, AKTUELLES_JAHR)
 
+        pruefung_bilanz = Format_Prüfung_Bilanz(bilanz)
+        pruefung_guv    = Format_Prüfung_GuV(guv)
+
+        if "❌" in pruefung_bilanz or "❌" in pruefung_guv:
+            output.textContent = f"{pruefung_bilanz}\n{pruefung_guv}"
+            return
+
         spalten_bilanz = list(bilanz[0].keys()) if bilanz else []
         spalten_guv    = list(guv[0].keys())    if guv    else []
 
@@ -82,6 +89,28 @@ def Finanzanalyse_starten(event=None):
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"
-
     finally:
         zeige_loader(False)
+
+def Format_Prüfung_Bilanz(bilanz):
+    """Prüft ob die Bilanz die richtigen Spalten hat."""
+    pflicht_spalten = ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite", "GJ"]
+    vorhandene_spalten = list(bilanz[0].keys()) if bilanz else []
+
+    fehlende = [s for s in pflicht_spalten if s not in vorhandene_spalten]
+
+    if fehlende:
+        return f"❌ Bilanz: Folgende Spalten fehlen: {', '.join(fehlende)}"
+    return "✅ Bilanz: Alle Spalten vorhanden."
+
+def Format_Prüfung_GuV(guv):
+    """Prüft ob die GuV die richtigen Spalten hat."""
+    pflicht_spalten = ["GuVposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite", "GJ"]
+    vorhandene_spalten = list(guv[0].keys()) if guv else []
+
+    fehlende = [s for s in pflicht_spalten if s not in vorhandene_spalten]
+
+    if fehlende:
+        return f"❌ GuV: Folgende Spalten fehlen: {', '.join(fehlende)}"
+
+    return "✅ GuV: Alle Spalten vorhanden."
