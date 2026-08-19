@@ -118,3 +118,4 @@ def Format_Prüfung_GuV(guv):
         return False, f"GuV FEHLER: Spalten fehlen: {', '.join(fehlende)}"
     return True, "GuV OK"
 
+
