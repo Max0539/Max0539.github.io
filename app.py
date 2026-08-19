@@ -11,6 +11,8 @@ def parse_csv(text):
     if not clean:
         return []
     reader = csv.DictReader(clean.splitlines(), delimiter=";")
+    # Spaltennamen trimmen damit Leerzeichen im CSV keinen Fehler auslösen
+    reader.fieldnames = [f.strip() for f in reader.fieldnames] if reader.fieldnames else []
     return list(reader)
 
 
@@ -71,11 +73,11 @@ def Finanzanalyse_starten(event=None):
         bilanz = lade_und_filtere(bilanz, AKTUELLES_JAHR)
         guv    = lade_und_filtere(guv, AKTUELLES_JAHR)
 
-        pruefung_bilanz = Format_Prüfung_Bilanz(bilanz)
-        pruefung_guv    = Format_Prüfung_GuV(guv)
+        ok_bilanz, msg_bilanz = Format_Prüfung_Bilanz(bilanz)
+        ok_guv,    msg_guv    = Format_Prüfung_GuV(guv)
 
-        if "❌" in pruefung_bilanz or "❌" in pruefung_guv:
-            output.textContent = f"{pruefung_bilanz}\n{pruefung_guv}"
+        if not ok_bilanz or not ok_guv:
+            output.textContent = f"{msg_bilanz}\n{msg_guv}"
             return
 
         spalten_bilanz = list(bilanz[0].keys()) if bilanz else []
@@ -100,17 +102,16 @@ def Format_Prüfung_Bilanz(bilanz):
     fehlende = [s for s in pflicht_spalten if s not in vorhandene_spalten]
 
     if fehlende:
-        return f"❌ Bilanz: Folgende Spalten fehlen: {', '.join(fehlende)}"
-    return "✅ Bilanz: Alle Spalten vorhanden."
+        return False, f"Bilanz FEHLER: Spalten fehlen: {', '.join(fehlende)}"
+    return True, "Bilanz OK"
 
 def Format_Prüfung_GuV(guv):
     """Prüft ob die GuV die richtigen Spalten hat."""
-    pflicht_spalten = ["GuVposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite", "GJ"]
+    pflicht_spalten = ["position", "Kategorie", "Betrag_EUR", "GJ"]
     vorhandene_spalten = list(guv[0].keys()) if guv else []
 
     fehlende = [s for s in pflicht_spalten if s not in vorhandene_spalten]
 
     if fehlende:
-        return f"❌ GuV: Folgende Spalten fehlen: {', '.join(fehlende)}"
-
-    return "✅ GuV: Alle Spalten vorhanden."
+        return False, f"GuV FEHLER: Spalten fehlen: {', '.join(fehlende)}"
+    return True, "GuV OK"
