@@ -1,4 +1,4 @@
-﻿from pyscript import document, when
+﻿from pyscript import document, when, window
 import csv
 from datetime import datetime
 
@@ -89,6 +89,8 @@ def Finanzanalyse_starten(event=None):
             f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}"
         )
 
+        window.location.href = "index2.html"
+
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"
     finally:
@@ -115,3 +117,4 @@ def Format_Prüfung_GuV(guv):
     if fehlende:
         return False, f"GuV FEHLER: Spalten fehlen: {', '.join(fehlende)}"
     return True, "GuV OK"
+
