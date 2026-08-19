@@ -4,6 +4,7 @@
   <title>Finanzanalyse – Ergebnis</title>
   <link rel="stylesheet" href="index.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 <body>
   <h1 style="text-align:center; font-family:Arial,sans-serif; color:#e8eef6;">Analyseergebnis</h1>
@@ -24,6 +25,7 @@
     if (ek > 0 || vb > 0) {
       new Chart(document.getElementById("eq-chart"), {
         type: "pie",
+        plugins: [ChartDataLabels],
         data: {
           labels: ["Eigenkapital", "Verbindlichkeiten"],
           datasets: [{
@@ -35,7 +37,15 @@
         },
         options: {
           plugins: {
-            legend: { labels: { color: "#e8eef6", font: { size: 14 } } }
+            legend: { labels: { color: "#e8eef6", font: { size: 14 } } },
+            datalabels: {
+              color: "#ffffff",
+              font: { size: 14, weight: "bold" },
+              formatter: (value, ctx) => {
+                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                return (value / total * 100).toFixed(1) + "%";
+              }
+            }
           }
         }
       });

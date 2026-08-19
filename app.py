@@ -106,7 +106,6 @@ def parse_betrag(wert):
     except ValueError:
         return 0.0
 
-
 def eigenkapitalquote(bilanz):
     ek = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Eigenkapital")
     vb = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Verbindlichkeiten")
@@ -114,7 +113,6 @@ def eigenkapitalquote(bilanz):
         return "Eigenkapitalquote: Keine Verbindlichkeiten gefunden.", 0, 0
     quote = ek / vb
     return f"Die Eigenkapitalquote betr\u00e4gt {quote:.2f}", ek, vb
-
 
 def Format_Prüfung_Bilanz(bilanz):
     """Prüft ob die Bilanz die richtigen Spalten hat."""
@@ -137,4 +135,3 @@ def Format_Prüfung_GuV(guv):
     if fehlende:
         return False, f"GuV FEHLER: Spalten fehlen: {', '.join(fehlende)}"
     return True, "GuV OK"
-
