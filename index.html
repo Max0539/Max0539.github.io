@@ -72,6 +72,16 @@
       cursor: pointer;
     }
 
+    #version {
+      position: fixed;
+      bottom: 12px;
+      right: 16px;
+      color: white;
+      font-size: 11px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
     .upload-zone.dragover {
       background-color: #eef6ff;
       border-color: #005fb8;
@@ -288,5 +298,7 @@
   </script>
 
   <script type="py" src="app.py"></script>
+
+  <div id="version">f07ce09</div>
 </body>
 </html>
