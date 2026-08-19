@@ -3,8 +3,42 @@
 <head>
   <title>Finanzanalyse – Ergebnis</title>
   <link rel="stylesheet" href="index.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <h1 style="text-align:center; font-family:Arial,sans-serif; color:#e8eef6;">Analyseergebnis</h1>
+
+  <div style="font-family:Arial,sans-serif; color:#e8eef6; max-width:800px; margin:30px auto;">
+    <p id="eq-text" style="font-size:18px; margin-bottom:30px;"></p>
+    <canvas id="eq-chart" width="400" height="400" style="max-width:400px; display:block; margin:0 auto;"></canvas>
+  </div>
+
+  <script>
+    const msg = sessionStorage.getItem("eq_msg") || "Keine Daten gefunden.";
+    const ek  = parseFloat(sessionStorage.getItem("eq_ek") || "0");
+    const vb  = parseFloat(sessionStorage.getItem("eq_vb") || "0");
+
+    document.getElementById("eq-text").textContent = msg;
+
+    if (ek > 0 || vb > 0) {
+      new Chart(document.getElementById("eq-chart"), {
+        type: "pie",
+        data: {
+          labels: ["Eigenkapital", "Verbindlichkeiten"],
+          datasets: [{
+            data: [ek, vb],
+            backgroundColor: ["#4a90e2", "#e25c4a"],
+            borderColor: ["#1a2a3a", "#1a2a3a"],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#e8eef6", font: { size: 14 } } }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>

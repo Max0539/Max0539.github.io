@@ -89,12 +89,34 @@ def Finanzanalyse_starten(event=None):
             f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}"
         )
 
+        eq_msg, ek, vb = eigenkapitalquote(bilanz)
+        window.sessionStorage.setItem("eq_msg", eq_msg)
+        window.sessionStorage.setItem("eq_ek", str(ek))
+        window.sessionStorage.setItem("eq_vb", str(vb))
         window.location.href = "index2.html"
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"
     finally:
         zeige_loader(False)
+
+def parse_betrag(wert):
+    """Wandelt deutsches Zahlenformat (1.234,56) in float um."""
+    s = (wert or "").strip().replace(".", "").replace(",", ".")
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+
+def eigenkapitalquote(bilanz):
+    ek = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Eigenkapital")
+    vb = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Verbindlichkeiten")
+    if vb == 0:
+        return "Eigenkapitalquote: Keine Verbindlichkeiten gefunden.", 0, 0
+    quote = ek / vb
+    return f"Die Eigenkapitalquote betr\u00e4gt {quote:.2f}", ek, vb
+
 
 def Format_Prüfung_Bilanz(bilanz):
     """Prüft ob die Bilanz die richtigen Spalten hat."""
