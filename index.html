@@ -221,6 +221,18 @@
 
       <button id="startButton" py-click="Finanzanalyse_starten">Finanzanalyse starten</button>
       <div id="loader">⏳ Analyse läuft...</div>
+
+      <div style="margin-top:20px;">
+        <label style="display:block; font-weight:bold; margin-bottom:8px;">Zu welcher Branche gehört das Unternehmen?</label>
+        <select id="branche" style="width:100%; padding:10px; font-size:15px; border-radius:6px; border:1px solid #4a90e2; background:#1a2a3a; color:#e8eef6;">
+          <option value="">-- Bitte wählen --</option>
+          <option value="tech">Tech</option>
+          <option value="mittelstand">Mittelstand</option>
+          <option value="industrie">Industrie</option>
+          <option value="immobilien">Immobilien</option>
+          <option value="banken">Banken</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -299,6 +311,6 @@
 
   <script type="py" src="app.py"></script>
 
-  <div id="version">v26</div>
+  <div id="version">v27</div>
 </body>
 </html>
