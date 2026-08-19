@@ -90,10 +90,8 @@ def Finanzanalyse_starten(event=None):
         )
 
         eq_msg, ek, vb = eigenkapitalquote(bilanz)
-        window.sessionStorage.setItem("eq_msg", eq_msg)
-        window.sessionStorage.setItem("eq_ek", str(ek))
-        window.sessionStorage.setItem("eq_vb", str(vb))
-        window.location.href = "index2.html"
+        encoded_msg = window.encodeURIComponent(eq_msg)
+        window.location.href = f"index2.html?eq_msg={encoded_msg}&ek={ek}&vb={vb}"
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"

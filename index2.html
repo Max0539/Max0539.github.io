@@ -14,9 +14,10 @@
   </div>
 
   <script>
-    const msg = sessionStorage.getItem("eq_msg") || "Keine Daten gefunden.";
-    const ek  = parseFloat(sessionStorage.getItem("eq_ek") || "0");
-    const vb  = parseFloat(sessionStorage.getItem("eq_vb") || "0");
+    const params = new URLSearchParams(window.location.search);
+    const msg = params.get("eq_msg") || "Keine Daten gefunden.";
+    const ek  = parseFloat(params.get("ek") || "0");
+    const vb  = parseFloat(params.get("vb") || "0");
 
     document.getElementById("eq-text").textContent = msg;
 
