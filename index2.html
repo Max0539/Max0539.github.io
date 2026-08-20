@@ -5,11 +5,32 @@
   <link rel="stylesheet" href="index.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    #charts-container {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .result-card {
+      background: #162433;
+      border: 1px solid #2b4157;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    @media (max-width: 980px) {
+      #charts-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <h1 style="text-align:center; font-family:Arial,sans-serif; color:#e8eef6;">Analyseergebnis</h1>
 
-  <div style="font-family:Arial,sans-serif; color:#e8eef6; max-width:800px; margin:30px auto;">
+  <div style="font-family:Arial,sans-serif; color:#e8eef6; max-width:1300px; margin:30px auto; padding:0 12px;">
     <div id="charts-container"></div>
   </div>
 
@@ -65,7 +86,7 @@
       }
 
       const block = document.createElement("div");
-      block.style.marginBottom = "40px";
+      block.className = "result-card";
 
       const titel = document.createElement("h2");
       titel.style.textAlign = "center";
