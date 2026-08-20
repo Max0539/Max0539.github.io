@@ -17,6 +17,21 @@
     const params = new URLSearchParams(window.location.search);
     let ergebnisse = [];
 
+    function formatEuro(zahl) {
+      const wert = Number(zahl || 0);
+      return new Intl.NumberFormat("de-DE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(wert) + " EUR";
+    }
+
+    function formatWert(name, wert) {
+      if (name === "Jahresüberschuss" && typeof wert === "string") {
+        return wert;
+      }
+      return formatEuro(wert);
+    }
+
     const rawResults = params.get("results");
     if (rawResults) {
       try {
@@ -40,6 +55,7 @@
       const ek = Number(eintrag.ek || 0);
       const bs = Number(eintrag.bs || 0);
       const restAktiva = Math.max(bs - ek, 0);
+      const overview = eintrag.overview || {};
 
       const block = document.createElement("div");
       block.style.marginBottom = "40px";
@@ -66,6 +82,70 @@
       block.appendChild(titel);
       block.appendChild(text);
       block.appendChild(canvas);
+
+      const tableTitle = document.createElement("h3");
+      tableTitle.style.textAlign = "center";
+      tableTitle.style.fontSize = "18px";
+      tableTitle.style.marginTop = "25px";
+      tableTitle.style.marginBottom = "12px";
+      tableTitle.textContent = eintrag.gj ? `Financel Overview ${eintrag.gj}` : "Financel Overview";
+
+      const table = document.createElement("table");
+      table.style.width = "100%";
+      table.style.maxWidth = "640px";
+      table.style.margin = "0 auto";
+      table.style.borderCollapse = "collapse";
+      table.style.background = "#1f2f40";
+      table.style.border = "1px solid #36516b";
+
+      const kopf = document.createElement("tr");
+      const kopfLinks = document.createElement("th");
+      kopfLinks.textContent = "Kennzahl";
+      kopfLinks.style.padding = "10px";
+      kopfLinks.style.textAlign = "left";
+      kopfLinks.style.borderBottom = "1px solid #36516b";
+
+      const kopfRechts = document.createElement("th");
+      kopfRechts.textContent = "Wert";
+      kopfRechts.style.padding = "10px";
+      kopfRechts.style.textAlign = "right";
+      kopfRechts.style.borderBottom = "1px solid #36516b";
+
+      kopf.appendChild(kopfLinks);
+      kopf.appendChild(kopfRechts);
+      table.appendChild(kopf);
+
+      const zeilen = [
+        ["Gesamtumsatz", overview["Gesamtumsatz"]],
+        ["EBITA", overview["EBITA"]],
+        ["Jahresüberschuss", overview["Jahresüberschuss"]],
+        ["Bilanzsumme", overview["Bilanzsumme"]],
+        ["Eigenkapital", overview["Eigenkapital"]],
+        ["Freumdkapital", overview["Freumdkapital"]],
+        ["Cash", overview["Cash"]],
+      ];
+
+      zeilen.forEach((eintragZeile) => {
+        const tr = document.createElement("tr");
+
+        const tdName = document.createElement("td");
+        tdName.textContent = eintragZeile[0];
+        tdName.style.padding = "10px";
+        tdName.style.borderBottom = "1px solid #2b4157";
+
+        const tdWert = document.createElement("td");
+        tdWert.textContent = formatWert(eintragZeile[0], eintragZeile[1]);
+        tdWert.style.padding = "10px";
+        tdWert.style.textAlign = "right";
+        tdWert.style.borderBottom = "1px solid #2b4157";
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdWert);
+        table.appendChild(tr);
+      });
+
+      block.appendChild(tableTitle);
+      block.appendChild(table);
       container.appendChild(block);
 
       if (!(ek > 0 || bs > 0)) {

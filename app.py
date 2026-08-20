@@ -7,14 +7,15 @@ AKTUELLES_JAHR = datetime.now().year
 
 
 def parse_csv(text):
-    """Liest CSV-Text (Semikolon-getrennt) und gibt eine Liste von Dictionaries zurück."""
-    csv_text = (text or "").strip().lstrip("\ufeff")
-    if not csv_text:
+    """Liest CSV-Text (Semikolon-getrennt) und gibt eine Liste von Zeilen zurück."""
+    inhalt = (text or "").strip().lstrip("\ufeff")
+    if not inhalt:
         return []
 
-    reader = csv.DictReader(csv_text.splitlines(), delimiter=";")
+    reader = csv.DictReader(inhalt.splitlines(), delimiter=";")
     if reader.fieldnames:
         reader.fieldnames = [name.strip() for name in reader.fieldnames]
+
     return list(reader)
 
 
@@ -27,46 +28,79 @@ def parse_betrag(wert):
         return 0.0
 
 
+def text_klein(zeile, feld):
+    return (zeile.get(feld, "") or "").strip().lower()
+
+
+def hole_gj_wert(zeile):
+    """Liest das Geschäftsjahr aus verschiedenen Spaltennamen."""
+    gj = (zeile.get("GJ", "") or "").strip()
+    if gj:
+        return gj
+
+    gj = (zeile.get("Geschaeftsjahr", "") or "").strip()
+    if gj:
+        return gj
+
+    gj = (zeile.get("Geschäftsjahr", "") or "").strip()
+    return gj
+
+
+def hat_jahr_spalte(daten):
+    if not daten:
+        return False
+
+    spalten = list(daten[0].keys())
+    if "GJ" in spalten:
+        return True
+    if "Geschaeftsjahr" in spalten:
+        return True
+    if "Geschäftsjahr" in spalten:
+        return True
+    return False
+
+
 def lade_und_filtere_nach_jahr(daten, jahr):
-    """Filtert strikt nach GJ und gibt nur passende Zeilen zurück."""
     gefiltert = []
     for zeile in daten:
-        gj = zeile.get("GJ", "").strip()
-        if gj == str(jahr):
+        if hole_gj_wert(zeile) == str(jahr):
             gefiltert.append(zeile)
     return gefiltert
 
 
 def hole_gj_liste(daten):
-    """Liefert alle vorhandenen GJ-Werte ohne Duplikate, absteigend sortiert."""
     jahre = []
     for zeile in daten:
-        gj = zeile.get("GJ", "").strip()
+        gj = hole_gj_wert(zeile)
         if gj and gj not in jahre:
             jahre.append(gj)
     jahre.sort(reverse=True)
     return jahre
 
 
-def zeige_loader(sichtbar):
-    """Zeigt oder versteckt das Ladesymbol."""
-    loader = document.getElementById("loader")
-    if loader:
-        loader.style.display = "block" if sichtbar else "none"
+def hole_guv_seite(zeile):
+    """Liest haben/soll aus der GuV-Zeile, mit einfachem Fallback."""
+    seite = (zeile.get("Seite", "") or "").strip().lower()
+    if not seite:
+        seite = (zeile.get("seite", "") or "").strip().lower()
+    if not seite:
+        seite = (zeile.get("SollHaben", "") or "").strip().lower()
+    if not seite:
+        seite = (zeile.get("Soll/Haben", "") or "").strip().lower()
 
+    if seite:
+        return seite
 
-def pruefe_pflicht_spalten(daten, pflicht_spalten, name):
-    """Prüft, ob alle Pflichtspalten vorhanden sind."""
-    vorhandene_spalten = list(daten[0].keys()) if daten else []
-    fehlende = [spalte for spalte in pflicht_spalten if spalte not in vorhandene_spalten]
+    kategorie = text_klein(zeile, "Kategorie")
+    if "ertrag" in kategorie:
+        return "haben"
+    if "aufwand" in kategorie:
+        return "soll"
 
-    if fehlende:
-        return False, f"{name} FEHLER: Spalten fehlen: {', '.join(fehlende)}"
-    return True, f"{name} OK"
+    return ""
 
 
 def pruefe_eingaben(bilanz_text, guv_text):
-    """Validiert, ob Bilanz- und GuV-Text vorhanden sind."""
     hat_bilanz = bool((bilanz_text or "").strip())
     hat_guv = bool((guv_text or "").strip())
 
@@ -79,47 +113,163 @@ def pruefe_eingaben(bilanz_text, guv_text):
     return None
 
 
-def eigenkapitalquote(bilanz):
+def pruefe_pflicht_spalten(daten, pflicht_spalten, name):
+    spalten = list(daten[0].keys()) if daten else []
+    fehlende = []
+
+    for spalte in pflicht_spalten:
+        if spalte not in spalten:
+            fehlende.append(spalte)
+
+    if fehlende:
+        return False, f"{name} FEHLER: Spalten fehlen: {', '.join(fehlende)}"
+    return True, f"{name} OK"
+
+
+def zeige_loader(sichtbar):
+    loader = document.getElementById("loader")
+    if loader:
+        loader.style.display = "block" if sichtbar else "none"
+
+
+def eigenkapitalquote(bilanz_jahr):
     eigenkapital = 0.0
     bilanzsumme_aktiva = 0.0
 
-    for zeile in bilanz:
+    for zeile in bilanz_jahr:
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
+        kategorie = text_klein(zeile, "Kategorie")
+        seite = text_klein(zeile, "Seite")
 
-        if zeile.get("Kategorie", "").strip() == "Eigenkapital":
+        if kategorie == "eigenkapital":
             eigenkapital += betrag
-
-        if zeile.get("Seite", "").strip().lower() == "aktiva":
+        if seite == "aktiva":
             bilanzsumme_aktiva += betrag
 
     if bilanzsumme_aktiva == 0:
-        return "Eigenkapitalquote: Keine Aktiva-Bilanzsumme gefunden.", 0, 0
+        return "Eigenkapitalquote: Keine Aktiva-Bilanzsumme gefunden.", 0.0, 0.0
 
     quote = (eigenkapital / bilanzsumme_aktiva) * 100
     return f"Die Eigenkapitalquote beträgt {quote:.2f}%", eigenkapital, bilanzsumme_aktiva
 
 
-def pruefe_bilanzsummen(bilanz, toleranz=0.01):
-    """Prüft, ob die Summe von Aktiva und Passiva übereinstimmt."""
-    summe_aktiva = 0.0
-    summe_passiva = 0.0
+def pruefe_bilanzsumme_fuer_jahr(bilanz_jahr, toleranz=0.01):
+    aktiva = 0.0
+    passiva = 0.0
 
-    for zeile in bilanz:
+    for zeile in bilanz_jahr:
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = zeile.get("Seite", "").strip().lower()
+        seite = text_klein(zeile, "Seite")
 
         if seite == "aktiva":
-            summe_aktiva += betrag
+            aktiva += betrag
         elif seite == "passiva":
-            summe_passiva += betrag
+            passiva += betrag
 
-    stimmt = abs(summe_aktiva - summe_passiva) <= toleranz
-    return stimmt, summe_aktiva, summe_passiva
+    if abs(aktiva - passiva) > toleranz:
+        return False
+    return True
+
+
+def baue_financel_overview(bilanz_jahr, guv_jahr, bilanzsumme_aktiva, eigenkapital):
+    umsatz = 0.0
+    haben = 0.0
+    soll = 0.0
+
+    for zeile in guv_jahr:
+        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
+        seite = hole_guv_seite(zeile)
+
+        if seite == "haben":
+            umsatz += betrag
+            haben += betrag
+        elif seite == "soll":
+            soll += betrag
+
+    jahresergebnis = haben - soll
+    if jahresergebnis >= 0:
+        jahresueberschuss_text = f"Gewinn[{jahresergebnis:.2f}]"
+    else:
+        jahresueberschuss_text = f"Verlust[{abs(jahresergebnis):.2f}]"
+
+    passiva_summe = 0.0
+    cash = 0.0
+
+    for zeile in bilanz_jahr:
+        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
+        seite = text_klein(zeile, "Seite")
+        unterkategorie = text_klein(zeile, "Unterkategorie")
+
+        if seite == "passiva":
+            passiva_summe += betrag
+        if unterkategorie == "liquide mittel":
+            cash += betrag
+
+    fremdkapital = passiva_summe - eigenkapital
+    if fremdkapital < 0:
+        fremdkapital = 0.0
+
+    return {
+        "Gesamtumsatz": umsatz,
+        "EBITA": 0.0,
+        "Jahresüberschuss": jahresueberschuss_text,
+        "Bilanzsumme": bilanzsumme_aktiva,
+        "Eigenkapital": eigenkapital,
+        "Freumdkapital": fremdkapital,
+        "Cash": cash,
+    }
+
+
+def analysiere_alle_jahre(bilanz, guv):
+    bilanz_jahre = hole_gj_liste(bilanz)
+    guv_jahre = hole_gj_liste(guv)
+
+    gemeinsame_jahre = []
+    for jahr in bilanz_jahre:
+        if jahr in guv_jahre:
+            gemeinsame_jahre.append(jahr)
+
+    if not gemeinsame_jahre:
+        return None, "⚠️ Keine gemeinsamen GJ-Daten in Bilanz und GuV gefunden.", []
+
+    ergebnisse = []
+
+    for jahr in gemeinsame_jahre:
+        bilanz_jahr = lade_und_filtere_nach_jahr(bilanz, jahr)
+        guv_jahr = lade_und_filtere_nach_jahr(guv, jahr)
+
+        if not bilanz_jahr or not guv_jahr:
+            continue
+
+        if not pruefe_bilanzsumme_fuer_jahr(bilanz_jahr):
+            return None, "bilanzsummen stimmen nicht überein", gemeinsame_jahre
+
+        eq_msg, eigenkapital, bilanzsumme_aktiva = eigenkapitalquote(bilanz_jahr)
+        overview = baue_financel_overview(
+            bilanz_jahr,
+            guv_jahr,
+            bilanzsumme_aktiva,
+            eigenkapital,
+        )
+
+        ergebnisse.append(
+            {
+                "gj": jahr,
+                "msg": eq_msg,
+                "ek": eigenkapital,
+                "bs": bilanzsumme_aktiva,
+                "overview": overview,
+            }
+        )
+
+    if not ergebnisse:
+        return None, "⚠️ Keine auswertbaren Daten nach GJ-Filterung gefunden.", gemeinsame_jahre
+
+    return ergebnisse, None, gemeinsame_jahre
 
 
 @when("click", "#startButton")
 def finanzanalyse_starten(event=None):
-    """Startet die Analyse nach Klick auf den Button."""
     output = document.getElementById("output")
     bilanz_el = document.getElementById("data-bilanz")
     guv_el = document.getElementById("data-guv")
@@ -131,9 +281,9 @@ def finanzanalyse_starten(event=None):
     bilanz_text = bilanz_el.textContent or ""
     guv_text = guv_el.textContent or ""
 
-    eingabe_fehler = pruefe_eingaben(bilanz_text, guv_text)
-    if eingabe_fehler:
-        output.textContent = eingabe_fehler
+    fehler = pruefe_eingaben(bilanz_text, guv_text)
+    if fehler:
+        output.textContent = fehler
         return
 
     zeige_loader(True)
@@ -152,12 +302,12 @@ def finanzanalyse_starten(event=None):
 
         ok_bilanz, msg_bilanz = pruefe_pflicht_spalten(
             bilanz,
-            ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite", "GJ"],
+            ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"],
             "Bilanz",
         )
         ok_guv, msg_guv = pruefe_pflicht_spalten(
             guv,
-            ["position", "Kategorie", "Betrag_EUR", "GJ"],
+            ["position", "Kategorie", "Betrag_EUR"],
             "GuV",
         )
 
@@ -165,43 +315,20 @@ def finanzanalyse_starten(event=None):
             output.textContent = f"{msg_bilanz}\n{msg_guv}"
             return
 
-        bilanz_jahre = hole_gj_liste(bilanz)
-        guv_jahre = hole_gj_liste(guv)
-        gemeinsame_jahre = [jahr for jahr in bilanz_jahre if jahr in guv_jahre]
-
-        if not gemeinsame_jahre:
-            output.textContent = "⚠️ Keine gemeinsamen GJ-Daten in Bilanz und GuV gefunden."
+        if not hat_jahr_spalte(bilanz):
+            output.textContent = "Bilanz FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
+            return
+        if not hat_jahr_spalte(guv):
+            output.textContent = "GuV FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
             return
 
-        ergebnisse = []
-
-        for jahr in gemeinsame_jahre:
-            bilanz_jahr = lade_und_filtere_nach_jahr(bilanz, jahr)
-            guv_jahr = lade_und_filtere_nach_jahr(guv, jahr)
-
-            if not bilanz_jahr or not guv_jahr:
-                continue
-
-            summen_ok, _, _ = pruefe_bilanzsummen(bilanz_jahr)
-            if not summen_ok:
-                output.textContent = "bilanzsummen stimmen nicht überein"
-                return
-
-            eq_msg, ek, bs = eigenkapitalquote(bilanz_jahr)
-            ergebnisse.append({
-                "gj": jahr,
-                "msg": eq_msg,
-                "ek": ek,
-                "bs": bs,
-            })
-
-        if not ergebnisse:
-            output.textContent = "⚠️ Keine auswertbaren Daten nach GJ-Filterung gefunden."
+        ergebnisse, analyse_fehler, gemeinsame_jahre = analysiere_alle_jahre(bilanz, guv)
+        if analyse_fehler:
+            output.textContent = analyse_fehler
             return
 
         spalten_bilanz = list(bilanz[0].keys())
         spalten_guv = list(guv[0].keys())
-
         output.textContent = (
             "✅ Dateien erfolgreich geladen\n"
             f"Bilanz: {len(bilanz)} Zeile(n), Spalten: {', '.join(spalten_bilanz)}\n"
@@ -210,28 +337,34 @@ def finanzanalyse_starten(event=None):
         )
 
         ergebnisse_json = json.dumps(ergebnisse)
-        encoded_ergebnisse = window.encodeURIComponent(ergebnisse_json)
-        window.location.href = f"index2.html?results={encoded_ergebnisse}"
+        encoded = window.encodeURIComponent(ergebnisse_json)
+        window.location.href = f"index2.html?results={encoded}"
 
-    except Exception as fehler:
-        output.textContent = f"❌ Fehler: {fehler}"
+    except Exception as e:
+        output.textContent = f"❌ Fehler: {e}"
     finally:
         zeige_loader(False)
 
 
+def Finanzanalyse_starten(event=None):
+    """Kompatibilität für bestehendes py-click im HTML."""
+    finanzanalyse_starten(event)
+
+
 def Format_Prüfung_Bilanz(bilanz):
-    """Kompatible Wrapper-Funktion für Bilanzprüfung."""
+    """Kompatibler Wrapper für alte Aufrufe."""
     return pruefe_pflicht_spalten(
         bilanz,
-        ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite", "GJ"],
+        ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"],
         "Bilanz",
     )
 
 
 def Format_Prüfung_GuV(guv):
-    """Kompatible Wrapper-Funktion für GuV-Prüfung."""
+    """Kompatibler Wrapper für alte Aufrufe."""
     return pruefe_pflicht_spalten(
         guv,
-        ["position", "Kategorie", "Betrag_EUR", "GJ"],
+        ["position", "Kategorie", "Betrag_EUR"],
         "GuV",
     )
+
