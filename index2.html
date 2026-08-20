@@ -10,21 +10,69 @@
   <h1 style="text-align:center; font-family:Arial,sans-serif; color:#e8eef6;">Analyseergebnis</h1>
 
   <div style="font-family:Arial,sans-serif; color:#e8eef6; max-width:800px; margin:30px auto;">
-    <p id="eq-text" style="font-size:18px; margin-bottom:30px;"></p>
-    <canvas id="eq-chart" width="400" height="400" style="max-width:400px; display:block; margin:0 auto;"></canvas>
+    <div id="charts-container"></div>
   </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const msg = params.get("eq_msg") || "Keine Daten gefunden.";
-    const ek  = parseFloat(params.get("ek") || "0");
-    const bs  = parseFloat(params.get("bs") || "0");
-    const restAktiva = Math.max(bs - ek, 0);
+    let ergebnisse = [];
 
-    document.getElementById("eq-text").textContent = msg;
+    const rawResults = params.get("results");
+    if (rawResults) {
+      try {
+        ergebnisse = JSON.parse(rawResults);
+      } catch (e) {
+        ergebnisse = [];
+      }
+    }
 
-    if (ek > 0 || bs > 0) {
-      new Chart(document.getElementById("eq-chart"), {
+    // Fallback für ältere Links mit Einzelwerten
+    if (!ergebnisse.length) {
+      const msg = params.get("eq_msg") || "Keine Daten gefunden.";
+      const ek = parseFloat(params.get("ek") || "0");
+      const bs = parseFloat(params.get("bs") || "0");
+      ergebnisse = [{ gj: "", msg, ek, bs }];
+    }
+
+    const container = document.getElementById("charts-container");
+
+    ergebnisse.forEach((eintrag, index) => {
+      const ek = Number(eintrag.ek || 0);
+      const bs = Number(eintrag.bs || 0);
+      const restAktiva = Math.max(bs - ek, 0);
+
+      const block = document.createElement("div");
+      block.style.marginBottom = "40px";
+
+      const titel = document.createElement("h2");
+      titel.style.textAlign = "center";
+      titel.style.fontSize = "20px";
+      titel.style.marginBottom = "10px";
+      titel.textContent = eintrag.gj ? `GJ ${eintrag.gj}` : "Ergebnis";
+
+      const text = document.createElement("p");
+      text.style.fontSize = "18px";
+      text.style.marginBottom = "20px";
+      text.textContent = eintrag.msg || "Keine Daten gefunden.";
+
+      const canvas = document.createElement("canvas");
+      canvas.id = `eq-chart-${index}`;
+      canvas.width = 400;
+      canvas.height = 400;
+      canvas.style.maxWidth = "400px";
+      canvas.style.display = "block";
+      canvas.style.margin = "0 auto";
+
+      block.appendChild(titel);
+      block.appendChild(text);
+      block.appendChild(canvas);
+      container.appendChild(block);
+
+      if (!(ek > 0 || bs > 0)) {
+        return;
+      }
+
+      new Chart(canvas, {
         type: "pie",
         plugins: [ChartDataLabels],
         data: {
@@ -44,13 +92,16 @@
               font: { size: 14, weight: "bold" },
               formatter: (value, ctx) => {
                 const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                if (total === 0) {
+                  return "0.0%";
+                }
                 return (value / total * 100).toFixed(1) + "%";
               }
             }
           }
         }
       });
-    }
+    });
   </script>
 </body>
 </html>
