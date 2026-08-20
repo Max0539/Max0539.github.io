@@ -18,18 +18,19 @@
     const params = new URLSearchParams(window.location.search);
     const msg = params.get("eq_msg") || "Keine Daten gefunden.";
     const ek  = parseFloat(params.get("ek") || "0");
-    const vb  = parseFloat(params.get("vb") || "0");
+    const bs  = parseFloat(params.get("bs") || "0");
+    const restAktiva = Math.max(bs - ek, 0);
 
     document.getElementById("eq-text").textContent = msg;
 
-    if (ek > 0 || vb > 0) {
+    if (ek > 0 || bs > 0) {
       new Chart(document.getElementById("eq-chart"), {
         type: "pie",
         plugins: [ChartDataLabels],
         data: {
-          labels: ["Eigenkapital", "Verbindlichkeiten"],
+          labels: ["Eigenkapital", "Restliche Aktiva"],
           datasets: [{
-            data: [ek, vb],
+            data: [ek, restAktiva],
             backgroundColor: ["#4a90e2", "#e25c4a"],
             borderColor: ["#1a2a3a", "#1a2a3a"],
             borderWidth: 2

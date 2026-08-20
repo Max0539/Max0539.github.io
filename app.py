@@ -89,9 +89,9 @@ def Finanzanalyse_starten(event=None):
             f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}"
         )
 
-        eq_msg, ek, vb = eigenkapitalquote(bilanz)
+        eq_msg, ek, bs = eigenkapitalquote(bilanz)
         encoded_msg = window.encodeURIComponent(eq_msg)
-        window.location.href = f"index2.html?eq_msg={encoded_msg}&ek={ek}&vb={vb}"
+        window.location.href = f"index2.html?eq_msg={encoded_msg}&ek={ek}&bs={bs}"
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"
@@ -107,12 +107,23 @@ def parse_betrag(wert):
         return 0.0
 
 def eigenkapitalquote(bilanz):
-    ek = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Eigenkapital")
-    vb = sum(parse_betrag(z["Betrag_EUR"]) for z in bilanz if z.get("Kategorie", "").strip() == "Verbindlichkeiten")
-    if vb == 0:
-        return "Eigenkapitalquote: Keine Verbindlichkeiten gefunden.", 0, 0
-    quote = ek / vb
-    return f"Die Eigenkapitalquote betr\u00e4gt {quote:.2f}", ek, vb
+    eigenkapital = 0.0
+    bilanzsumme_aktiva = 0.0
+
+    for zeile in bilanz:
+        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
+
+        if zeile.get("Kategorie", "").strip() == "Eigenkapital":
+            eigenkapital += betrag
+
+        if zeile.get("Seite", "").strip().lower() == "aktiva":
+            bilanzsumme_aktiva += betrag
+
+    if bilanzsumme_aktiva == 0:
+        return "Eigenkapitalquote: Keine Aktiva-Bilanzsumme gefunden.", 0, 0
+
+    quote = (eigenkapital / bilanzsumme_aktiva) * 100
+    return f"Die Eigenkapitalquote betr\u00e4gt {quote:.2f}%", eigenkapital, bilanzsumme_aktiva
 
 def Format_Prüfung_Bilanz(bilanz):
     """Prüft ob die Bilanz die richtigen Spalten hat."""
