@@ -246,7 +246,7 @@ def baue_financel_overview(bilanz_jahr, guv_jahr, bilanzsumme_aktiva, eigenkapit
         "Jahresüberschuss": jahresueberschuss_text,
         "Bilanzsumme": bilanzsumme_aktiva,
         "Eigenkapital": eigenkapital,
-        "Freumdkapital": fremdkapital,
+        "Fremdkapital": fremdkapital,
         "Cash": cash,
     }
 

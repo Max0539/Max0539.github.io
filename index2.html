@@ -56,6 +56,13 @@
       const bs = Number(eintrag.bs || 0);
       const restAktiva = Math.max(bs - ek, 0);
       const overview = eintrag.overview || {};
+      const fremdkapital = Number(overview["Fremdkapital"] ?? overview["Freumdkapital"] ?? 0);
+
+      let verschuldungsgradText = "Der Verschuldungsgrad beträgt nicht berechenbar";
+      if (ek > 0) {
+        const verschuldungsgrad = (fremdkapital / ek) * 100;
+        verschuldungsgradText = `Der Verschuldungsgrad beträgt ${verschuldungsgrad.toFixed(2)}%`;
+      }
 
       const block = document.createElement("div");
       block.style.marginBottom = "40px";
@@ -79,9 +86,17 @@
       canvas.style.display = "block";
       canvas.style.margin = "0 auto";
 
+      const verschuldungsgradP = document.createElement("p");
+      verschuldungsgradP.style.textAlign = "center";
+      verschuldungsgradP.style.fontSize = "17px";
+      verschuldungsgradP.style.marginTop = "12px";
+      verschuldungsgradP.style.marginBottom = "12px";
+      verschuldungsgradP.textContent = verschuldungsgradText;
+
       block.appendChild(titel);
       block.appendChild(text);
       block.appendChild(canvas);
+      block.appendChild(verschuldungsgradP);
 
       const tableTitle = document.createElement("h3");
       tableTitle.style.textAlign = "center";
@@ -121,7 +136,7 @@
         ["Jahresüberschuss", overview["Jahresüberschuss"]],
         ["Bilanzsumme", overview["Bilanzsumme"]],
         ["Eigenkapital", overview["Eigenkapital"]],
-        ["Freumdkapital", overview["Freumdkapital"]],
+        ["Fremdkapital", overview["Fremdkapital"] ?? overview["Freumdkapital"]],
         ["Cash", overview["Cash"]],
       ];
 
