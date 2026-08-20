@@ -20,8 +20,25 @@ def parse_csv(text):
 
 
 def parse_betrag(wert):
-    """Wandelt deutsches Zahlenformat (1.234,56) in float um."""
-    text = (wert or "").strip().replace(".", "").replace(",", ".")
+    """Wandelt verschiedene Zahlenformate in float um."""
+    text = (wert or "").strip()
+    text = text.replace(" ", "")
+    text = text.replace("'", "")
+
+    if "," in text and "." in text:
+        letztes_komma = text.rfind(",")
+        letzter_punkt = text.rfind(".")
+
+        if letztes_komma > letzter_punkt:
+            # Deutsch: 1.234,56
+            text = text.replace(".", "")
+            text = text.replace(",", ".")
+        else:
+            # Englisch: 1,234.56
+            text = text.replace(",", "")
+    elif "," in text:
+        text = text.replace(",", ".")
+
     try:
         return float(text)
     except ValueError:
@@ -30,6 +47,16 @@ def parse_betrag(wert):
 
 def text_klein(zeile, feld):
     return (zeile.get(feld, "") or "").strip().lower()
+
+
+def normalisiere_text(text):
+    """Macht Text robust für Vergleiche (z. B. Umlaute)."""
+    t = (text or "").strip().lower()
+    t = t.replace("ä", "ae")
+    t = t.replace("ö", "oe")
+    t = t.replace("ü", "ue")
+    t = t.replace("ß", "ss")
+    return t
 
 
 def hole_gj_wert(zeile):
@@ -80,21 +107,25 @@ def hole_gj_liste(daten):
 
 def hole_guv_seite(zeile):
     """Liest haben/soll aus der GuV-Zeile, mit einfachem Fallback."""
-    seite = (zeile.get("Seite", "") or "").strip().lower()
+    seite = normalisiere_text(zeile.get("Seite", "") or "")
     if not seite:
-        seite = (zeile.get("seite", "") or "").strip().lower()
+        seite = normalisiere_text(zeile.get("seite", "") or "")
     if not seite:
-        seite = (zeile.get("SollHaben", "") or "").strip().lower()
+        seite = normalisiere_text(zeile.get("SollHaben", "") or "")
     if not seite:
-        seite = (zeile.get("Soll/Haben", "") or "").strip().lower()
+        seite = normalisiere_text(zeile.get("Soll/Haben", "") or "")
 
-    if seite:
-        return seite
-
-    kategorie = text_klein(zeile, "Kategorie")
-    if "ertrag" in kategorie:
+    if seite in ["haben", "habenseite", "h"]:
         return "haben"
-    if "aufwand" in kategorie:
+    if seite in ["soll", "sollseite", "s"]:
+        return "soll"
+
+    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
+    position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
+
+    if "ertrag" in kategorie or "erloes" in kategorie or "umsatz" in position:
+        return "haben"
+    if "aufwand" in kategorie or "kosten" in kategorie:
         return "soll"
 
     return ""
@@ -198,11 +229,11 @@ def baue_financel_overview(bilanz_jahr, guv_jahr, bilanzsumme_aktiva, eigenkapit
     for zeile in bilanz_jahr:
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
         seite = text_klein(zeile, "Seite")
-        unterkategorie = text_klein(zeile, "Unterkategorie")
+        unterkategorie = normalisiere_text(zeile.get("Unterkategorie", ""))
 
         if seite == "passiva":
             passiva_summe += betrag
-        if unterkategorie == "liquide mittel":
+        if "liquide mittel" in unterkategorie:
             cash += betrag
 
     fremdkapital = passiva_summe - eigenkapital
@@ -367,4 +398,3 @@ def Format_Prüfung_GuV(guv):
         ["position", "Kategorie", "Betrag_EUR"],
         "GuV",
     )
-
