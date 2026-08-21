@@ -304,6 +304,7 @@ def finanzanalyse_starten(event=None):
     output = document.getElementById("output")
     bilanz_el = document.getElementById("data-bilanz")
     guv_el = document.getElementById("data-guv")
+    branche_el = document.getElementById("branche")
 
     if not output or not bilanz_el or not guv_el:
         print("FEHLER: HTML-Elemente nicht gefunden.")
@@ -368,33 +369,32 @@ def finanzanalyse_starten(event=None):
         )
 
         ergebnisse_json = json.dumps(ergebnisse)
-        encoded = window.encodeURIComponent(ergebnisse_json)
-        window.location.href = f"index2.html?results={encoded}"
+        encoded_results = window.encodeURIComponent(ergebnisse_json)
+        branche = ""
+        if branche_el:
+            branche = branche_el.value or ""
+        encoded_branche = window.encodeURIComponent(branche)
+        window.location.href = f"index2.html?results={encoded_results}&branche={encoded_branche}"
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"
     finally:
         zeige_loader(False)
 
-
 def Finanzanalyse_starten(event=None):
-    """Kompatibilität für bestehendes py-click im HTML."""
     finanzanalyse_starten(event)
 
-
 def Format_Prüfung_Bilanz(bilanz):
-    """Kompatibler Wrapper für alte Aufrufe."""
     return pruefe_pflicht_spalten(
         bilanz,
         ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"],
         "Bilanz",
     )
 
-
 def Format_Prüfung_GuV(guv):
-    """Kompatibler Wrapper für alte Aufrufe."""
     return pruefe_pflicht_spalten(
         guv,
         ["position", "Kategorie", "Betrag_EUR"],
         "GuV",
     )
+

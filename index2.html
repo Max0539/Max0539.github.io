@@ -20,6 +20,23 @@
       padding: 16px;
     }
 
+    .report-card {
+      margin-bottom: 22px;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 24px;
+      margin-top: 10px;
+    }
+
+    .report-line {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
     .trend-card {
       margin-top: 24px;
     }
@@ -31,6 +48,10 @@
 
     @media (max-width: 980px) {
       #charts-container {
+        grid-template-columns: 1fr;
+      }
+
+      .report-grid {
         grid-template-columns: 1fr;
       }
 
@@ -50,6 +71,16 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     let ergebnisse = [];
+    const branche = (params.get("branche") || "").trim().toLowerCase();
+
+    const BRANCHEN_PROFIL = {
+      tech: { cagrGewicht: 0.8, stabilGewicht: 0.2 },
+      mittelstand: { cagrGewicht: 0.7, stabilGewicht: 0.3 },
+      industrie: { cagrGewicht: 0.65, stabilGewicht: 0.35 },
+      immobilien: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
+      banken: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
+      default: { cagrGewicht: 0.7, stabilGewicht: 0.3 }
+    };
 
     function formatEuro(zahl) {
       const wert = Number(zahl || 0);
@@ -84,6 +115,113 @@
     }
 
     const container = document.getElementById("charts-container");
+
+    function parseJahrWert(jahrText) {
+      const jahr = Number(String(jahrText || "").trim());
+      return Number.isFinite(jahr) ? jahr : null;
+    }
+
+    function cagrPunkte(cagrProzent) {
+      if (cagrProzent < -10) return 0;
+      if (cagrProzent < -5) return 1;
+      if (cagrProzent < -2) return 2;
+      if (cagrProzent < 2) return 4;
+      if (cagrProzent < 6) return 6;
+      if (cagrProzent < 8) return 7;
+      if (cagrProzent < 10) return 8;
+      if (cagrProzent < 15) return 9;
+      return 10;
+    }
+
+    function standardabweichung(arr) {
+      if (!arr.length) return 0;
+      const mittelwert = arr.reduce((sum, x) => sum + x, 0) / arr.length;
+      const varianz = arr.reduce((sum, x) => sum + ((x - mittelwert) ** 2), 0) / arr.length;
+      return Math.sqrt(varianz);
+    }
+
+    function stabilitaetPunkte(stabilWerte) {
+      const sd = standardabweichung(stabilWerte);
+      if (sd < 1.5) return { punkte: 10, sd };
+      if (sd < 3) return { punkte: 8, sd };
+      if (sd < 5) return { punkte: 6, sd };
+      if (sd < 7) return { punkte: 4, sd };
+      if (sd < 10) return { punkte: 2, sd };
+      return { punkte: 0, sd };
+    }
+
+    function baueAnalyseBericht(daten) {
+      if (daten.length < 2) {
+        return;
+      }
+
+      const profil = BRANCHEN_PROFIL[branche] || BRANCHEN_PROFIL.default;
+      const erstes = daten[0];
+      const letztes = daten[daten.length - 1];
+      const startUmsatz = erstes.umsatz;
+      const endUmsatz = letztes.umsatz;
+      const n = daten.length;
+
+      let cagr = 0;
+      let cagrBerechenbar = false;
+      if (startUmsatz > 0 && n > 0) {
+        cagr = (endUmsatz / startUmsatz) ** (1 / n) - 1;
+        cagrBerechenbar = Number.isFinite(cagr);
+      }
+
+      const wachstum = daten
+        .map((eintrag, index, arr) => {
+          if (index === 0) return null;
+          const vorher = arr[index - 1].umsatz;
+          if (vorher <= 0) return null;
+          return ((eintrag.umsatz - vorher) / vorher) * 100;
+        })
+        .filter((w) => w !== null);
+
+      const cagrProzent = cagrBerechenbar ? cagr * 100 : 0;
+      const punkteCagr = cagrBerechenbar ? cagrPunkte(cagrProzent) : 0;
+      const stabil = stabilitaetPunkte(wachstum);
+      const punkteGesamt = (punkteCagr * profil.cagrGewicht) + (stabil.punkte * profil.stabilGewicht);
+
+      const report = document.createElement("div");
+      report.className = "result-card report-card";
+
+      const titel = document.createElement("h2");
+      titel.style.marginTop = "0";
+      titel.style.marginBottom = "8px";
+      titel.style.textAlign = "center";
+      titel.textContent = "Analyse Bericht";
+
+      const formel = document.createElement("p");
+      formel.className = "report-line";
+      formel.textContent = `Formel: CAGR = (Umsatz ${letztes.gj} / Umsatz ${erstes.gj})^(1/${n}) - 1`;
+
+      const grid = document.createElement("div");
+      grid.className = "report-grid";
+
+      const zeilen = [
+        `Branche: ${branche || "nicht gesetzt"}`,
+        `Gewichtung: CAGR ${(profil.cagrGewicht * 100).toFixed(0)}% | Umsatzstabilität ${(profil.stabilGewicht * 100).toFixed(0)}%`,
+        `CAGR: ${cagrBerechenbar ? cagrProzent.toFixed(2) + "%" : "nicht berechenbar"}`,
+        `CAGR-Punkte: ${punkteCagr} P`,
+        `Umsatzstabilität (Std.-Abw. Wachstum): ${stabil.sd.toFixed(2)}%`,
+        `Stabilitäts-Punkte: ${stabil.punkte} P`,
+        `Gesamtpunkte (gewichtet): ${punkteGesamt.toFixed(2)} / 10`,
+      ];
+
+      zeilen.forEach((text) => {
+        const p = document.createElement("p");
+        p.className = "report-line";
+        p.textContent = text;
+        grid.appendChild(p);
+      });
+
+      report.appendChild(titel);
+      report.appendChild(formel);
+      report.appendChild(grid);
+
+      container.parentElement.insertBefore(report, container);
+    }
 
     ergebnisse.forEach((eintrag, index) => {
       const ek = Number(eintrag.ek || 0);
@@ -232,11 +370,6 @@
       });
     });
 
-    function parseJahrWert(jahrText) {
-      const jahr = Number(String(jahrText || "").trim());
-      return Number.isFinite(jahr) ? jahr : null;
-    }
-
     const trendDaten = ergebnisse
       .map((eintrag) => {
         const overview = eintrag.overview || {};
@@ -256,6 +389,8 @@
         }
         return a.gj.localeCompare(b.gj, "de");
       });
+
+    baueAnalyseBericht(trendDaten);
 
     if (trendDaten.length > 0) {
       const jahre = trendDaten.map((eintrag) => eintrag.gj);
