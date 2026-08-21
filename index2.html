@@ -20,9 +20,22 @@
       padding: 16px;
     }
 
+    .trend-card {
+      margin-top: 24px;
+    }
+
+    .trend-chart-wrap {
+      position: relative;
+      height: 420px;
+    }
+
     @media (max-width: 980px) {
       #charts-container {
         grid-template-columns: 1fr;
+      }
+
+      .trend-chart-wrap {
+        height: 320px;
       }
     }
   </style>
@@ -218,6 +231,162 @@
         }
       });
     });
+
+    function parseJahrWert(jahrText) {
+      const jahr = Number(String(jahrText || "").trim());
+      return Number.isFinite(jahr) ? jahr : null;
+    }
+
+    const trendDaten = ergebnisse
+      .map((eintrag) => {
+        const overview = eintrag.overview || {};
+        return {
+          gj: String(eintrag.gj || "").trim(),
+          umsatz: Number(overview["Gesamtumsatz"] || 0),
+          eigenkapital: Number(overview["Eigenkapital"] ?? eintrag.ek ?? 0)
+        };
+      })
+      .filter((eintrag) => eintrag.gj !== "")
+      .sort((a, b) => {
+        const aJahr = parseJahrWert(a.gj);
+        const bJahr = parseJahrWert(b.gj);
+
+        if (aJahr !== null && bJahr !== null) {
+          return aJahr - bJahr;
+        }
+        return a.gj.localeCompare(b.gj, "de");
+      });
+
+    if (trendDaten.length > 0) {
+      const jahre = trendDaten.map((eintrag) => eintrag.gj);
+      const eigenkapitalWerte = trendDaten.map((eintrag) => eintrag.eigenkapital);
+
+      const umsatzwachstumWerte = trendDaten.map((eintrag, index, arr) => {
+        if (index === 0) {
+          return null;
+        }
+
+        const vorher = arr[index - 1].umsatz;
+        if (vorher <= 0) {
+          return null;
+        }
+
+        return ((eintrag.umsatz - vorher) / vorher) * 100;
+      });
+
+      const trendCard = document.createElement("div");
+      trendCard.className = "result-card trend-card";
+
+      const trendTitle = document.createElement("h2");
+      trendTitle.style.textAlign = "center";
+      trendTitle.style.fontSize = "20px";
+      trendTitle.style.marginBottom = "14px";
+      trendTitle.textContent = "Umsatzwachstum und Eigenkapitalentwicklung";
+
+      const trendWrap = document.createElement("div");
+      trendWrap.className = "trend-chart-wrap";
+
+      const trendCanvas = document.createElement("canvas");
+      trendCanvas.id = "trend-chart";
+
+      trendWrap.appendChild(trendCanvas);
+      trendCard.appendChild(trendTitle);
+      trendCard.appendChild(trendWrap);
+      container.parentElement.appendChild(trendCard);
+
+      new Chart(trendCanvas, {
+        type: "line",
+        data: {
+          labels: jahre,
+          datasets: [
+            {
+              label: "Umsatzwachstum (%)",
+              data: umsatzwachstumWerte,
+              yAxisID: "yPercent",
+              borderColor: "#4a90e2",
+              backgroundColor: "rgba(74, 144, 226, 0.2)",
+              borderWidth: 3,
+              tension: 0.3,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              spanGaps: true
+            },
+            {
+              label: "Eigenkapital (EUR)",
+              data: eigenkapitalWerte,
+              yAxisID: "yEuro",
+              borderColor: "#5dbf8a",
+              backgroundColor: "rgba(93, 191, 138, 0.2)",
+              borderWidth: 3,
+              tension: 0.3,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            }
+          ]
+        },
+        options: {
+          maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: "#e8eef6",
+                font: { size: 13 }
+              }
+            },
+            datalabels: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.dataset.label || "";
+                  const value = ctx.parsed.y;
+
+                  if (ctx.dataset.yAxisID === "yPercent") {
+                    if (value === null || Number.isNaN(value)) {
+                      return `${label}: keine Basis`;
+                    }
+                    return `${label}: ${value.toFixed(2)}%`;
+                  }
+
+                  return `${label}: ${formatEuro(value)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#c8ddf5" },
+              grid: { color: "rgba(200, 221, 245, 0.12)" }
+            },
+            yPercent: {
+              type: "linear",
+              position: "left",
+              ticks: {
+                color: "#4a90e2",
+                callback: (value) => `${value}%`
+              },
+              grid: { color: "rgba(200, 221, 245, 0.12)" }
+            },
+            yEuro: {
+              type: "linear",
+              position: "right",
+              ticks: {
+                color: "#5dbf8a",
+                callback: (value) => formatEuro(value)
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>
