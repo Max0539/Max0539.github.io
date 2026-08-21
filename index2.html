@@ -189,23 +189,16 @@
       const titel = document.createElement("h2");
       titel.style.marginTop = "0";
       titel.style.marginBottom = "8px";
-      titel.style.textAlign = "center";
+      titel.style.textAlign = "left";
       titel.textContent = "Analyse Bericht";
-
-      const formel = document.createElement("p");
-      formel.className = "report-line";
-      formel.textContent = `Formel: CAGR = (Umsatz ${letztes.gj} / Umsatz ${erstes.gj})^(1/${n}) - 1`;
 
       const grid = document.createElement("div");
       grid.className = "report-grid";
+      grid.style.gridTemplateColumns = "1fr";
 
       const zeilen = [
-        `Branche: ${branche || "nicht gesetzt"}`,
-        `Gewichtung: CAGR ${(profil.cagrGewicht * 100).toFixed(0)}% | Umsatzstabilität ${(profil.stabilGewicht * 100).toFixed(0)}%`,
-        `CAGR: ${cagrBerechenbar ? cagrProzent.toFixed(2) + "%" : "nicht berechenbar"}`,
-        `CAGR-Punkte: ${punkteCagr} P`,
-        `Umsatzstabilität (Std.-Abw. Wachstum): ${stabil.sd.toFixed(2)}%`,
-        `Stabilitäts-Punkte: ${stabil.punkte} P`,
+        `CAGR Ergebnis: ${cagrBerechenbar ? cagrProzent.toFixed(2) + "%" : "nicht berechenbar"}`,
+        `Umsatzstabilität: ${stabil.sd.toFixed(2)}%`,
         `Gesamtpunkte (gewichtet): ${punkteGesamt.toFixed(2)} / 10`,
       ];
 
@@ -217,7 +210,6 @@
       });
 
       report.appendChild(titel);
-      report.appendChild(formel);
       report.appendChild(grid);
 
       container.parentElement.insertBefore(report, container);
