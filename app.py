@@ -397,4 +397,3 @@ def Format_Prüfung_GuV(guv):
         ["position", "Kategorie", "Betrag_EUR"],
         "GuV",
     )
-

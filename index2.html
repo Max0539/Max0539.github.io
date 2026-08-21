@@ -123,71 +123,71 @@
 
     function cagrPunkte(cagrProzent, brancheWert) {
       if (brancheWert === "tech") {
-        if (cagrProzent < -15) return 0;
-        if (cagrProzent < -10) return 1;
-        if (cagrProzent < -5) return 2;
-        if (cagrProzent < 0) return 3;
-        if (cagrProzent < 3) return 4;
-        if (cagrProzent < 6) return 5;
-        if (cagrProzent < 10) return 6;
-        if (cagrProzent < 15) return 7;
-        if (cagrProzent < 20) return 8;
-        if (cagrProzent < 30) return 9;
+        if (cagrProzent < 2.5) return 0;
+        if (cagrProzent < 6.3) return 1;
+        if (cagrProzent < 7.2) return 2;
+        if (cagrProzent < 7.8) return 3;
+        if (cagrProzent < 8.7) return 4;
+        if (cagrProzent < 9.2) return 5;
+        if (cagrProzent < 10.4) return 6;
+        if (cagrProzent < 13.3) return 7;
+        if (cagrProzent < 14.6) return 8;
+        if (cagrProzent <= 15) return 9;
         return 10;
       }
 
       if (brancheWert === "banken") {
-        if (cagrProzent < -5) return 0;
-        if (cagrProzent < -3) return 1;
-        if (cagrProzent < -2) return 2;
-        if (cagrProzent < -1) return 3;
-        if (cagrProzent < 0) return 4;
-        if (cagrProzent < 2) return 5;
-        if (cagrProzent < 4) return 6;
-        if (cagrProzent < 6) return 7;
-        if (cagrProzent < 8) return 8;
-        if (cagrProzent < 12) return 9;
+        if (cagrProzent < 1.4) return 0;
+        if (cagrProzent < 4.9) return 1;
+        if (cagrProzent < 5.9) return 2;
+        if (cagrProzent < 6.6) return 3;
+        if (cagrProzent < 8.1) return 4;
+        if (cagrProzent < 8.7) return 5;
+        if (cagrProzent < 10.4) return 6;
+        if (cagrProzent < 12.0) return 7;
+        if (cagrProzent < 13.6) return 8;
+        if (cagrProzent <= 14.0) return 9;
         return 10;
       }
 
       if (brancheWert === "immobilien") {
-        if (cagrProzent < -10) return 0;
-        if (cagrProzent < -6) return 1;
-        if (cagrProzent < -3) return 2;
-        if (cagrProzent < 0) return 3;
-        if (cagrProzent < 2) return 4;
-        if (cagrProzent < 4) return 5;
-        if (cagrProzent < 6) return 6;
-        if (cagrProzent < 8) return 7;
-        if (cagrProzent < 12) return 8;
-        if (cagrProzent < 18) return 9;
+        if (cagrProzent < -19.5) return 0;
+        if (cagrProzent < -15.5) return 1;
+        if (cagrProzent < -11.0) return 2;
+        if (cagrProzent < -3.6) return 3;
+        if (cagrProzent < 3.2) return 4;
+        if (cagrProzent < 5.8) return 5;
+        if (cagrProzent < 6.5) return 6;
+        if (cagrProzent < 7.6) return 7;
+        if (cagrProzent < 9.8) return 8;
+        if (cagrProzent <= 10.0) return 9;
         return 10;
       }
 
       if (brancheWert === "industrie") {
-        if (cagrProzent < -10) return 0;
-        if (cagrProzent < -6) return 1;
-        if (cagrProzent < -3) return 2;
-        if (cagrProzent < 0) return 3;
-        if (cagrProzent < 2) return 4;
-        if (cagrProzent < 4) return 5;
-        if (cagrProzent < 6) return 6;
-        if (cagrProzent < 8) return 7;
-        if (cagrProzent < 10) return 8;
-        if (cagrProzent < 15) return 9;
+        if (cagrProzent < -6.1) return 0;
+        if (cagrProzent < -3.1) return 1;
+        if (cagrProzent < 1.1) return 2;
+        if (cagrProzent < 3.5) return 3;
+        if (cagrProzent < 4.1) return 4;
+        if (cagrProzent < 4.7) return 5;
+        if (cagrProzent < 5.4) return 6;
+        if (cagrProzent < 6.3) return 7;
+        if (cagrProzent < 9.7) return 8;
+        if (cagrProzent <= 10.0) return 9;
         return 10;
       }
 
-      if (cagrProzent < -10) return 0;
-      if (cagrProzent < -5) return 1;
-      if (cagrProzent < -2) return 2;
-      if (cagrProzent < 0) return 3;
-      if (cagrProzent < 2) return 4;
-      if (cagrProzent < 4) return 5;
-      if (cagrProzent < 6) return 6;
-      if (cagrProzent < 8) return 7;
-      if (cagrProzent < 10) return 8;
-      if (cagrProzent < 15) return 9;
+      if (cagrProzent < -6.1) return 0;
+      if (cagrProzent < -3.1) return 1;
+      if (cagrProzent < 1.1) return 2;
+      if (cagrProzent < 3.5) return 3;
+      if (cagrProzent < 4.1) return 4;
+      if (cagrProzent < 4.7) return 5;
+      if (cagrProzent < 5.4) return 6;
+      if (cagrProzent < 6.3) return 7;
+      if (cagrProzent < 9.7) return 8;
+      if (cagrProzent <= 10.0) return 9;
       return 10;
     }
 

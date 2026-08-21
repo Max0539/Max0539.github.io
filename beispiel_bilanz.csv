@@ -1,0 +1,21 @@
+Bilanzposition;Kategorie;Unterkategorie;Betrag_EUR;Seite;GJ
+Grundstuecke und Gebaeude;Anlagevermoegen;Sachanlagen;420000;Aktiva;2024
+Maschinen;Anlagevermoegen;Sachanlagen;160000;Aktiva;2024
+Vorraete;Umlaufvermoegen;Vorraete;110000;Aktiva;2024
+Forderungen aus LuL;Umlaufvermoegen;Forderungen;90000;Aktiva;2024
+Bankguthaben;Umlaufvermoegen;Liquide Mittel;150000;Aktiva;2024
+Gezeichnetes Kapital;Eigenkapital;Stammkapital;100000;Passiva;2024
+Gewinnruecklagen;Eigenkapital;Gewinnruecklagen;130000;Passiva;2024
+Bankdarlehen;Verbindlichkeiten;Bankdarlehen;280000;Passiva;2024
+Verbindl. aus LuL;Verbindlichkeiten;Lieferanten;100000;Passiva;2024
+Sonstige Verbindlichkeiten;Verbindlichkeiten;Sonstige;120000;Passiva;2024
+Grundstuecke und Gebaeude;Anlagevermoegen;Sachanlagen;450000;Aktiva;2025
+Maschinen;Anlagevermoegen;Sachanlagen;180000;Aktiva;2025
+Vorraete;Umlaufvermoegen;Vorraete;120000;Aktiva;2025
+Forderungen aus LuL;Umlaufvermoegen;Forderungen;95000;Aktiva;2025
+Bankguthaben;Umlaufvermoegen;Liquide Mittel;175000;Aktiva;2025
+Gezeichnetes Kapital;Eigenkapital;Stammkapital;100000;Passiva;2025
+Gewinnruecklagen;Eigenkapital;Gewinnruecklagen;155000;Passiva;2025
+Bankdarlehen;Verbindlichkeiten;Bankdarlehen;300000;Passiva;2025
+Verbindl. aus LuL;Verbindlichkeiten;Lieferanten;95000;Passiva;2025
+Sonstige Verbindlichkeiten;Verbindlichkeiten;Sonstige;170000;Passiva;2025

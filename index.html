@@ -139,6 +139,42 @@
       color: #b0c4de;
       margin-bottom: 10px;
     }
+
+    .download-box {
+      background: #1a2a3a;
+      border: 1px solid #2f4f72;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .download-title {
+      margin: 0 0 10px 0;
+      color: #c8ddf5;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .download-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .download-button {
+      display: inline-block;
+      background: #005fb8;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .download-button:hover {
+      background: #004080;
+    }
   </style>
 </head>
 <body>
@@ -153,6 +189,15 @@
     <div class="beispiel-seite">
       <div class="hinweis">
         📋 So müssen eure CSV-Dateien aufgebaut sein (Semikolon-getrennt):
+      </div>
+
+      <div class="download-box">
+        <p class="download-title">Beispieldateien herunterladen</p>
+        <div class="download-links">
+          <a class="download-button" href="beispiel_bilanz.csv" download>Beispiel Bilanz CSV</a>
+          <a class="download-button" href="beispiel_guv.csv" download>Beispiel GuV CSV</a>
+          <a class="download-button" href="Beispiel_Bilanz+GuV.zip" download>Bilanz + GuV als ZIP</a>
+        </div>
       </div>
 
       <h3>📊 Beispiel Bilanz</h3>
@@ -311,6 +356,6 @@
 
   <script type="py" src="app.py"></script>
 
-  <div id="version">v40</div>
+  <div id="version">v41</div>
 </body>
 </html>
