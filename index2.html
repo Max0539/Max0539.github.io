@@ -121,11 +121,69 @@
       return Number.isFinite(jahr) ? jahr : null;
     }
 
-    function cagrPunkte(cagrProzent) {
+    function cagrPunkte(cagrProzent, brancheWert) {
+      if (brancheWert === "tech") {
+        if (cagrProzent < -15) return 0;
+        if (cagrProzent < -10) return 1;
+        if (cagrProzent < -5) return 2;
+        if (cagrProzent < 0) return 3;
+        if (cagrProzent < 3) return 4;
+        if (cagrProzent < 6) return 5;
+        if (cagrProzent < 10) return 6;
+        if (cagrProzent < 15) return 7;
+        if (cagrProzent < 20) return 8;
+        if (cagrProzent < 30) return 9;
+        return 10;
+      }
+
+      if (brancheWert === "banken") {
+        if (cagrProzent < -5) return 0;
+        if (cagrProzent < -3) return 1;
+        if (cagrProzent < -2) return 2;
+        if (cagrProzent < -1) return 3;
+        if (cagrProzent < 0) return 4;
+        if (cagrProzent < 2) return 5;
+        if (cagrProzent < 4) return 6;
+        if (cagrProzent < 6) return 7;
+        if (cagrProzent < 8) return 8;
+        if (cagrProzent < 12) return 9;
+        return 10;
+      }
+
+      if (brancheWert === "immobilien") {
+        if (cagrProzent < -10) return 0;
+        if (cagrProzent < -6) return 1;
+        if (cagrProzent < -3) return 2;
+        if (cagrProzent < 0) return 3;
+        if (cagrProzent < 2) return 4;
+        if (cagrProzent < 4) return 5;
+        if (cagrProzent < 6) return 6;
+        if (cagrProzent < 8) return 7;
+        if (cagrProzent < 12) return 8;
+        if (cagrProzent < 18) return 9;
+        return 10;
+      }
+
+      if (brancheWert === "industrie") {
+        if (cagrProzent < -10) return 0;
+        if (cagrProzent < -6) return 1;
+        if (cagrProzent < -3) return 2;
+        if (cagrProzent < 0) return 3;
+        if (cagrProzent < 2) return 4;
+        if (cagrProzent < 4) return 5;
+        if (cagrProzent < 6) return 6;
+        if (cagrProzent < 8) return 7;
+        if (cagrProzent < 10) return 8;
+        if (cagrProzent < 15) return 9;
+        return 10;
+      }
+
       if (cagrProzent < -10) return 0;
       if (cagrProzent < -5) return 1;
       if (cagrProzent < -2) return 2;
+      if (cagrProzent < 0) return 3;
       if (cagrProzent < 2) return 4;
+      if (cagrProzent < 4) return 5;
       if (cagrProzent < 6) return 6;
       if (cagrProzent < 8) return 7;
       if (cagrProzent < 10) return 8;
@@ -179,7 +237,7 @@
         .filter((w) => w !== null);
 
       const cagrProzent = cagrBerechenbar ? cagr * 100 : 0;
-      const punkteCagr = cagrBerechenbar ? cagrPunkte(cagrProzent) : 0;
+      const punkteCagr = cagrBerechenbar ? cagrPunkte(cagrProzent, branche) : 0;
       const stabil = stabilitaetPunkte(wachstum);
       const punkteGesamt = (punkteCagr * profil.cagrGewicht) + (stabil.punkte * profil.stabilGewicht);
 
