@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Finanzanalyse – Ergebnis</title>
-  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="index.css?v=44">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <style>
@@ -256,7 +256,15 @@
 
     function baueKennzahlenTabelle(daten) {
       const jahre = daten.filter((eintrag) => eintrag.kennzahlen);
-      if (!jahre.length) return;
+      if (!jahre.length) {
+        // Ergebnisse stammen von einer alten, zwischengespeicherten app.py
+        const hinweis = document.createElement("div");
+        hinweis.className = "result-card kennzahlen-card";
+        hinweis.textContent = "Kennzahlen fehlen: Der Browser hat eine alte Version der Analyse geladen. "
+          + "Bitte die Startseite mit Strg+F5 neu laden und die Analyse erneut starten.";
+        container.parentElement.appendChild(hinweis);
+        return;
+      }
 
       const card = document.createElement("div");
       card.className = "result-card kennzahlen-card";

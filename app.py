@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 
 AKTUELLES_JAHR = datetime.now().year
+# Bei jeder neuen Version erhöhen (auch in index.html), damit Browser keine alten Dateien aus dem Cache laden
+VERSION = "44"
 
 
 def parse_csv(text):
@@ -646,7 +648,7 @@ def finanzanalyse_starten(event=None):
         if branche_el:
             branche = branche_el.value or ""
         encoded_branche = window.encodeURIComponent(branche)
-        window.location.href = f"index2.html?results={encoded_results}&branche={encoded_branche}"
+        window.location.href = f"index2.html?v={VERSION}&results={encoded_results}&branche={encoded_branche}"
 
     except Exception as e:
         output.textContent = f"❌ Fehler: {e}"

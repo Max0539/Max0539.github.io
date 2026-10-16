@@ -3,7 +3,7 @@
 <head>
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="index.css?v=44">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -356,8 +356,9 @@
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
   </script>
 
-  <script type="py" src="app.py"></script>
+  <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
+  <script type="py" src="app.py?v=44"></script>
 
-  <div id="version">v43</div>
+  <div id="version">v44</div>
 </body>
 </html>
