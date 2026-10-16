@@ -7,6 +7,9 @@ Abschreibungen;Aufwendungen;78000;Soll;2024
 Zinsaufwand;Aufwendungen;15000;Soll;2024
 Steuern;Aufwendungen;52000;Soll;2024
 Sonstige Aufwendungen;Aufwendungen;28000;Soll;2024
+Tilgung;Zusatzangaben;40000;-;2024
+Entnahmen und Ausschuettungen;Zusatzangaben;80000;-;2024
+Betriebsnotwendige Investitionen;Zusatzangaben;90000;-;2024
 Umsatzerloese;Ertraege;1200000;Haben;2025
 Sonstige Ertraege;Ertraege;45000;Haben;2025
 Materialaufwand;Aufwendungen;480000;Soll;2025
@@ -15,3 +18,17 @@ Abschreibungen;Aufwendungen;85000;Soll;2025
 Zinsaufwand;Aufwendungen;18000;Soll;2025
 Steuern;Aufwendungen;62000;Soll;2025
 Sonstige Aufwendungen;Aufwendungen;32000;Soll;2025
+Tilgung;Zusatzangaben;45000;-;2025
+Entnahmen und Ausschuettungen;Zusatzangaben;127000;-;2025
+Betriebsnotwendige Investitionen;Zusatzangaben;135000;-;2025
+Umsatzerloese;Ertraege;1290000;Haben;2026
+Sonstige Ertraege;Ertraege;40000;Haben;2026
+Materialaufwand;Aufwendungen;530000;Soll;2026
+Personalaufwand;Aufwendungen;375000;Soll;2026
+Abschreibungen;Aufwendungen;90000;Soll;2026
+Zinsaufwand;Aufwendungen;17000;Soll;2026
+Steuern;Aufwendungen;60000;Soll;2026
+Sonstige Aufwendungen;Aufwendungen;38000;Soll;2026
+Tilgung;Zusatzangaben;50000;-;2026
+Entnahmen und Ausschuettungen;Zusatzangaben;120000;-;2026
+Betriebsnotwendige Investitionen;Zusatzangaben;100000;-;2026

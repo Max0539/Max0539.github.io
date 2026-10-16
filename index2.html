@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Finanzanalyse – Ergebnis</title>
-  <link rel="stylesheet" href="index.css?v=44">
+  <link rel="stylesheet" href="index.css?v=45">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <style>
@@ -116,6 +117,46 @@
       white-space: nowrap;
     }
 
+    .kennzahlen-tabelle th.rechts { text-align: right; }
+
+    .kennzahlen-tabelle td.vergleich {
+      text-align: right;
+      white-space: nowrap;
+      font-size: 13px;
+      color: #b0c4de;
+    }
+
+    .kennzahlen-tabelle td.vergleich.besser { color: #6fd39a; }
+    .kennzahlen-tabelle td.vergleich.schlechter { color: #f08a8a; }
+
+    .kennzahlen-tabelle tr.gesamt td {
+      font-weight: bold;
+      font-size: 15px;
+      border-top: 2px solid #4a90e2;
+    }
+
+    .kennzahlen-tabelle .bedeutung {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      background: #2f4a66;
+      color: #c8ddf5;
+    }
+
+    .kennzahlen-tabelle .bedeutung-kern { background: #005fb8; color: #ffffff; }
+
+    .score-card {
+      margin-bottom: 22px;
+    }
+
+    .kennzahlen-card details summary {
+      cursor: pointer;
+      color: #c8ddf5;
+      margin-bottom: 10px;
+    }
+
     .ampel-gruen { background: #2e7d4f; }
     .ampel-gelb { background: #a88400; }
     .ampel-orange { background: #c2651a; }
@@ -174,35 +215,73 @@
       return formatEuro(wert);
     }
 
+    // Aus Kennzahlen_Bonitaetspruefung.xlsx (Blatt „Kennzahlen“). trend = Vorjahresvergleich anzeigen
     const KENNZAHLEN_META = [
-      {"id": "K01", "saeule": "Kapitalstruktur", "name": "Eigenkapitalquote", "formel": "Eigenkapital / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.3, 0.2, 0.1], "hinweis": "Zentrale Kennzahl im Bankrating. Stark branchenabhängig (Handel/Bau niedriger, Industrie höher). Bilanzsumme ggf. bereinigen (z. B. erhaltene Anzahlungen, Gesellschafterdarlehen)."},
-      {"id": "K02", "saeule": "Kapitalstruktur", "name": "Fremdkapitalquote", "formel": "Fremdkapital / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.7, 0.8, 0.9], "hinweis": "Gegenstück zur Eigenkapitalquote (zusammen 100 %)."},
-      {"id": "K03", "saeule": "Kapitalstruktur", "name": "Verschuldungsgrad", "formel": "Fremdkapital / Eigenkapital", "einheit": "%", "richtung": "niedriger", "schwellen": [1.5, 2, 4], "hinweis": "Banken erwarten laut Quellen max. ca. 200 % (Faktor 2). Bei negativem Eigenkapital wird Rot gesetzt."},
-      {"id": "K04", "saeule": "Kapitalstruktur", "name": "Anlagenintensität", "formel": "Anlagevermögen / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.6, 0.8], "hinweis": "Hohe Anlagenintensität gilt für Banken als weniger günstig, da Maschinen/Gebäude in Notzeiten schlechter verwertbar sind. Sehr branchenabhängig."},
-      {"id": "K05", "saeule": "Kapitalstruktur", "name": "Anlagendeckung I", "formel": "Eigenkapital / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.7, 0.4], "hinweis": "Zeigt, ob das Anlagevermögen durch Eigenkapital gedeckt ist."},
-      {"id": "K06", "saeule": "Kapitalstruktur", "name": "Anlagendeckung II", "formel": "(Eigenkapital + langfr. Fremdkapital) / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1.2, 1, 0.8], "hinweis": "Goldene Bilanzregel: langfristig gebundenes Vermögen sollte langfristig finanziert sein (mind. 100 %)."},
-      {"id": "K07", "saeule": "Kapitalstruktur", "name": "Bankverbindlichkeitenquote", "formel": "Verbindlichkeiten ggü. Banken / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "hinweis": "Abhängigkeit von Bankfinanzierung."},
-      {"id": "K08", "saeule": "Kapitalstruktur", "name": "Netto-Finanzverbindlichkeitenquote", "formel": "(Finanzverbindlichkeiten – liquide Mittel) / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.25, 0.4, 0.55], "hinweis": "Wird u. a. im Bundesbank-Verfahren (IFRS) verwendet."},
-      {"id": "R01", "saeule": "Rentabilität", "name": "Umsatzrentabilität", "formel": "Ergebnis vor Steuern (EBT) / Gesamtleistung", "einheit": "%", "richtung": "hoeher", "schwellen": [0.05, 0.02, 0], "hinweis": "Ertragskraft je Euro Leistung. Immer mit Branchenwerten vergleichen."},
-      {"id": "R02", "saeule": "Rentabilität", "name": "Gesamtkapitalrentabilität", "formel": "(EBT + Zinsaufwand) / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "hinweis": "Verzinsung des gesamten eingesetzten Kapitals."},
-      {"id": "R03", "saeule": "Rentabilität", "name": "Eigenkapitalrentabilität", "formel": "EBT / Eigenkapital", "einheit": "%", "richtung": "hoeher", "schwellen": [0.15, 0.08, 0.02], "hinweis": "Bei sehr niedrigem EK kann der Wert verzerrt hoch sein. Bei negativem EK wird Rot gesetzt."},
-      {"id": "R04", "saeule": "Rentabilität", "name": "EBITDA-Marge", "formel": "EBITDA / Umsatzerlöse (EBITDA = EBT + Zinsaufwand + Abschreibungen)", "einheit": "%", "richtung": "hoeher", "schwellen": [0.12, 0.06, 0.02], "hinweis": "Operative Ertragskraft vor Zinsen und Abschreibungen."},
-      {"id": "R05", "saeule": "Rentabilität", "name": "Personalaufwandsquote", "formel": "Personalaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "hinweis": "Kostenstruktur; stark branchenabhängig (Dienstleistung deutlich höher als Handel)."},
-      {"id": "R06", "saeule": "Rentabilität", "name": "Materialaufwandsquote", "formel": "Materialaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.55, 0.7], "hinweis": "Kostenstruktur; stark branchenabhängig."},
-      {"id": "R07", "saeule": "Rentabilität", "name": "Umsatzwachstum", "formel": "Umsatz aktuell / Umsatz Vorjahr – 1", "einheit": "%", "richtung": "hoeher", "schwellen": [0.03, 0, -0.1], "hinweis": "Entwicklung der Gesamtleistung über mehrere Jahre ist ein Standardkriterium. Starkes Wachstum kann zusätzlich Liquiditätsbedarf auslösen."},
-      {"id": "C01", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow (absolut)", "formel": "Jahresüberschuss + Abschreibungen ± Veränderung Rückstellungen", "einheit": "€", "richtung": "info", "schwellen": null, "hinweis": "Basisgröße für fast alle Cashflow-Kennzahlen. Sollte positiv und über die Jahre stabil sein. Kein fester Schwellenwert."},
-      {"id": "C02", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow-Rate", "formel": "Cashflow / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "hinweis": "Liquiditätswirksame Ertragskraft je Euro Umsatz."},
-      {"id": "C03", "saeule": "Cashflow & Kapitaldienst", "name": "Schuldentilgungsdauer (dynamischer Verschuldungsgrad)", "formel": "(Verbindlichkeiten – liquide Mittel) / Cashflow", "einheit": "Jahre", "richtung": "niedriger", "schwellen": [3, 5, 10], "hinweis": "Wie viele Jahre würde die rechnerische Entschuldung aus dem Cashflow dauern? Bei Cashflow ≤ 0 wird Rot gesetzt."},
-      {"id": "C04", "saeule": "Cashflow & Kapitaldienst", "name": "Zinsdeckung", "formel": "EBIT / Zinsaufwand (EBIT = EBT + Zinsaufwand)", "einheit": "Faktor", "richtung": "hoeher", "schwellen": [5, 3, 1.5], "hinweis": "Wie oft werden die Zinsen aus dem operativen Ergebnis verdient? Ratingagenturen nutzen vergleichbar EBITDA/Zinsen."},
-      {"id": "L01", "saeule": "Liquidität & Working Capital", "name": "Liquidität 1. Grades (Barliquidität)", "formel": "Liquide Mittel / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [0.2, 0.1, 0.05], "hinweis": "Sofort verfügbare Zahlungsfähigkeit."},
-      {"id": "L02", "saeule": "Liquidität & Working Capital", "name": "Liquidität 2. Grades (Einzugsliquidität)", "formel": "(Liquide Mittel + Forderungen) / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.8, 0.5], "hinweis": "Faustregel: mind. 100 % anstreben."},
-      {"id": "L03", "saeule": "Liquidität & Working Capital", "name": "Liquidität 3. Grades (Umlaufdeckung)", "formel": "Umlaufvermögen / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1.5, 1.2, 1], "hinweis": "Unter 100 % sind kurzfristige Schulden nicht durch Umlaufvermögen gedeckt."},
-      {"id": "L04", "saeule": "Liquidität & Working Capital", "name": "Working Capital (relativ)", "formel": "(Umlaufvermögen – kurzfr. Fremdkapital) / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.1, 0, -0.1], "hinweis": "Positives Working Capital = Finanzierungsspielraum. Lexware nennt auch Verhältnis zum Umsatz zur Vergleichbarkeit."},
-      {"id": "L05", "saeule": "Liquidität & Working Capital", "name": "Debitorenziel (DSO)", "formel": "Forderungen aus L+L / Umsatzerlöse × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [40, 60, 90], "hinweis": "Durchschnittliche Zahlungsdauer der Kunden. Längere Zahlungsziele verschlechtern die Kennzahlen."},
-      {"id": "L06", "saeule": "Liquidität & Working Capital", "name": "Lagerdauer (DIO)", "formel": "Vorräte / Materialaufwand × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [45, 90, 150], "hinweis": "Kapitalbindung im Lager. Höherer Warenbestand verschlechtert die Kennzahl."},
-      {"id": "L07", "saeule": "Liquidität & Working Capital", "name": "Kreditorenziel (DPO)", "formel": "Verbindlichkeiten aus L+L / Materialaufwand × 360", "einheit": "Tage", "richtung": "info", "schwellen": null, "hinweis": "Nur zur Einordnung. Sehr hohe Werte können auf Zahlungsverzug bei Lieferanten hindeuten, niedrige auf wenig genutzte Lieferantenkredite."},
-      {"id": "L08", "saeule": "Liquidität & Working Capital", "name": "Cash Conversion Cycle", "formel": "Debitorenziel + Lagerdauer – Kreditorenziel", "einheit": "Tage", "richtung": "niedriger", "schwellen": [30, 60, 120], "hinweis": "Dauer der Kapitalbindung im operativen Kreislauf."},
+      {"id": "K01", "saeule": "Kapitalstruktur", "name": "Eigenkapitalquote", "formel": "Eigenkapital / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.3, 0.2, 0.1], "bedeutung": "Kern", "trend": true, "hinweis": "Zentrale Kennzahl im Bankrating. Stark branchenabhängig (Handel/Bau niedriger, Industrie höher). Bilanzsumme ggf. bereinigen (z. B. erhaltene Anzahlungen, Gesellschafterdarlehen)."},
+      {"id": "K02", "saeule": "Kapitalstruktur", "name": "Fremdkapitalquote", "formel": "Fremdkapital / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.7, 0.8, 0.9], "bedeutung": "Wichtig", "trend": false, "hinweis": "Gegenstück zur Eigenkapitalquote (zusammen 100 %)."},
+      {"id": "K03", "saeule": "Kapitalstruktur", "name": "Verschuldungsgrad", "formel": "Fremdkapital / Eigenkapital", "einheit": "%", "richtung": "niedriger", "schwellen": [1.5, 2, 4], "bedeutung": "Kern", "trend": true, "hinweis": "Banken erwarten laut Quellen max. ca. 200 % (Faktor 2). Bei negativem Eigenkapital wird Rot gesetzt."},
+      {"id": "K04", "saeule": "Kapitalstruktur", "name": "Anlagenintensität", "formel": "Anlagevermögen / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.6, 0.8], "bedeutung": "Ergänzend", "trend": false, "hinweis": "Hohe Anlagenintensität gilt für Banken als weniger günstig, da Maschinen/Gebäude in Notzeiten schlechter verwertbar sind. Sehr branchenabhängig."},
+      {"id": "K05", "saeule": "Kapitalstruktur", "name": "Anlagendeckung I", "formel": "Eigenkapital / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.7, 0.4], "bedeutung": "Wichtig", "trend": false, "hinweis": "Zeigt, ob das Anlagevermögen durch Eigenkapital gedeckt ist."},
+      {"id": "K06", "saeule": "Kapitalstruktur", "name": "Anlagendeckung II", "formel": "(Eigenkapital + langfr. Fremdkapital) / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1.2, 1, 0.8], "bedeutung": "Wichtig", "trend": false, "hinweis": "Goldene Bilanzregel: langfristig gebundenes Vermögen sollte langfristig finanziert sein (mind. 100 %)."},
+      {"id": "K07", "saeule": "Kapitalstruktur", "name": "Bankverbindlichkeitenquote", "formel": "Verbindlichkeiten ggü. Banken / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "bedeutung": "Wichtig", "trend": false, "hinweis": "Abhängigkeit von Bankfinanzierung."},
+      {"id": "K08", "saeule": "Kapitalstruktur", "name": "Netto-Finanzverbindlichkeitenquote", "formel": "(Finanzverbindlichkeiten – liquide Mittel) / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.25, 0.4, 0.55], "bedeutung": "Wichtig", "trend": false, "hinweis": "Wird u. a. im Bundesbank-Verfahren (IFRS) verwendet."},
+      {"id": "R01", "saeule": "Rentabilität", "name": "Umsatzrentabilität", "formel": "Ergebnis vor Steuern (EBT) / Gesamtleistung", "einheit": "%", "richtung": "hoeher", "schwellen": [0.05, 0.02, 0], "bedeutung": "Kern", "trend": true, "hinweis": "Ertragskraft je Euro Leistung. Immer mit Branchenwerten vergleichen."},
+      {"id": "R02", "saeule": "Rentabilität", "name": "Gesamtkapitalrentabilität", "formel": "(EBT + Zinsaufwand) / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "bedeutung": "Kern", "trend": false, "hinweis": "Verzinsung des gesamten eingesetzten Kapitals."},
+      {"id": "R03", "saeule": "Rentabilität", "name": "Eigenkapitalrentabilität", "formel": "EBT / Eigenkapital", "einheit": "%", "richtung": "hoeher", "schwellen": [0.15, 0.08, 0.02], "bedeutung": "Wichtig", "trend": false, "hinweis": "Bei sehr niedrigem EK kann der Wert verzerrt hoch sein. Bei negativem EK wird Rot gesetzt."},
+      {"id": "R04", "saeule": "Rentabilität", "name": "EBITDA-Marge", "formel": "EBITDA / Umsatzerlöse (EBITDA = EBT + Zinsaufwand + Abschreibungen)", "einheit": "%", "richtung": "hoeher", "schwellen": [0.12, 0.06, 0.02], "bedeutung": "Wichtig", "trend": true, "hinweis": "Operative Ertragskraft vor Zinsen und Abschreibungen."},
+      {"id": "R05", "saeule": "Rentabilität", "name": "Personalaufwandsquote", "formel": "Personalaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "bedeutung": "Ergänzend", "trend": false, "hinweis": "Kostenstruktur; stark branchenabhängig (Dienstleistung deutlich höher als Handel)."},
+      {"id": "R06", "saeule": "Rentabilität", "name": "Materialaufwandsquote", "formel": "Materialaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.55, 0.7], "bedeutung": "Ergänzend", "trend": false, "hinweis": "Kostenstruktur; stark branchenabhängig."},
+      {"id": "R07", "saeule": "Rentabilität", "name": "Umsatzwachstum", "formel": "Umsatz aktuell / Umsatz Vorjahr – 1", "einheit": "%", "richtung": "hoeher", "schwellen": [0.03, 0, -0.1], "bedeutung": "Ergänzend", "trend": false, "hinweis": "Entwicklung der Gesamtleistung über mehrere Jahre ist ein Standardkriterium. Starkes Wachstum kann zusätzlich Liquiditätsbedarf auslösen."},
+      {"id": "C01", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow (absolut)", "formel": "Jahresüberschuss + Abschreibungen ± Veränderung Rückstellungen", "einheit": "€", "richtung": "info", "schwellen": null, "bedeutung": "Kern", "trend": true, "hinweis": "Basisgröße für fast alle Cashflow-Kennzahlen. Sollte positiv und über die Jahre stabil sein. Kein fester Schwellenwert."},
+      {"id": "C02", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow-Rate", "formel": "Cashflow / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "bedeutung": "Wichtig", "trend": true, "hinweis": "Liquiditätswirksame Ertragskraft je Euro Umsatz."},
+      {"id": "C03", "saeule": "Cashflow & Kapitaldienst", "name": "Schuldentilgungsdauer (dynamischer Verschuldungsgrad)", "formel": "(Verbindlichkeiten – liquide Mittel) / Cashflow", "einheit": "Jahre", "richtung": "niedriger", "schwellen": [3, 5, 10], "bedeutung": "Kern", "trend": true, "hinweis": "Wie viele Jahre würde die rechnerische Entschuldung aus dem Cashflow dauern? Bei Cashflow ≤ 0 wird Rot gesetzt."},
+      {"id": "C04", "saeule": "Cashflow & Kapitaldienst", "name": "Zinsdeckung", "formel": "EBIT / Zinsaufwand (EBIT = EBT + Zinsaufwand)", "einheit": "Faktor", "richtung": "hoeher", "schwellen": [5, 3, 1.5], "bedeutung": "Wichtig", "trend": false, "hinweis": "Wie oft werden die Zinsen aus dem operativen Ergebnis verdient? Ratingagenturen nutzen vergleichbar EBITDA/Zinsen."},
+      {"id": "C05", "saeule": "Cashflow & Kapitaldienst", "name": "Kapitaldienstgrenze", "formel": "Erweiterter Cashflow – betriebsnotwendige Investitionen (erw. Cashflow = Cashflow + Zinsaufwand – Steuern/Entnahmen/Ausschüttungen)", "einheit": "€", "richtung": "info", "schwellen": null, "bedeutung": "Kern", "trend": false, "hinweis": "Maximale jährliche Kreditbelastung. Muss größer sein als der geplante Kapitaldienst (Zins + Tilgung). Details je Bank unterschiedlich."},
+      {"id": "C06", "saeule": "Cashflow & Kapitaldienst", "name": "Auslastung der Kapitaldienstgrenze", "formel": "Kapitaldienst (Zins + Tilgung) / Kapitaldienstgrenze", "einheit": "%", "richtung": "niedriger", "schwellen": [0.7, 0.9, 1], "bedeutung": "Kern", "trend": false, "hinweis": "Je niedriger, desto besser. Über 100 % = Kapitaldienst nicht aus dem Cashflow tragbar. Bei Kapitaldienstgrenze ≤ 0 wird Rot gesetzt."},
+      {"id": "C07", "saeule": "Cashflow & Kapitaldienst", "name": "DSCR (Debt Service Coverage Ratio)", "formel": "(Cashflow + Zinsaufwand) / (Zinsaufwand + Tilgung)", "einheit": "Faktor", "richtung": "hoeher", "schwellen": [1.5, 1.25, 1], "bedeutung": "Wichtig", "trend": true, "hinweis": "Internationale Variante der Kapitaldienstfähigkeit. 1,0 = Kapitaldienst gerade gedeckt; 1,25 bis 2,5 wird in Quellen als solide bis sicher genannt."},
+      {"id": "L01", "saeule": "Liquidität & Working Capital", "name": "Liquidität 1. Grades (Barliquidität)", "formel": "Liquide Mittel / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [0.2, 0.1, 0.05], "bedeutung": "Wichtig", "trend": false, "hinweis": "Sofort verfügbare Zahlungsfähigkeit."},
+      {"id": "L02", "saeule": "Liquidität & Working Capital", "name": "Liquidität 2. Grades (Einzugsliquidität)", "formel": "(Liquide Mittel + Forderungen) / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.8, 0.5], "bedeutung": "Wichtig", "trend": true, "hinweis": "Faustregel: mind. 100 % anstreben."},
+      {"id": "L03", "saeule": "Liquidität & Working Capital", "name": "Liquidität 3. Grades (Umlaufdeckung)", "formel": "Umlaufvermögen / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1.5, 1.2, 1], "bedeutung": "Wichtig", "trend": false, "hinweis": "Unter 100 % sind kurzfristige Schulden nicht durch Umlaufvermögen gedeckt."},
+      {"id": "L04", "saeule": "Liquidität & Working Capital", "name": "Working Capital (relativ)", "formel": "(Umlaufvermögen – kurzfr. Fremdkapital) / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.1, 0, -0.1], "bedeutung": "Wichtig", "trend": false, "hinweis": "Positives Working Capital = Finanzierungsspielraum. Lexware nennt auch Verhältnis zum Umsatz zur Vergleichbarkeit."},
+      {"id": "L05", "saeule": "Liquidität & Working Capital", "name": "Debitorenziel (DSO)", "formel": "Forderungen aus L+L / Umsatzerlöse × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [40, 60, 90], "bedeutung": "Wichtig", "trend": true, "hinweis": "Durchschnittliche Zahlungsdauer der Kunden. Längere Zahlungsziele verschlechtern die Kennzahlen."},
+      {"id": "L06", "saeule": "Liquidität & Working Capital", "name": "Lagerdauer (DIO)", "formel": "Vorräte / Materialaufwand × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [45, 90, 150], "bedeutung": "Wichtig", "trend": true, "hinweis": "Kapitalbindung im Lager. Höherer Warenbestand verschlechtert die Kennzahl."},
+      {"id": "L07", "saeule": "Liquidität & Working Capital", "name": "Kreditorenziel (DPO)", "formel": "Verbindlichkeiten aus L+L / Materialaufwand × 360", "einheit": "Tage", "richtung": "info", "schwellen": null, "bedeutung": "Ergänzend", "trend": false, "hinweis": "Nur zur Einordnung. Sehr hohe Werte können auf Zahlungsverzug bei Lieferanten hindeuten, niedrige auf wenig genutzte Lieferantenkredite."},
+      {"id": "L08", "saeule": "Liquidität & Working Capital", "name": "Cash Conversion Cycle", "formel": "Debitorenziel + Lagerdauer – Kreditorenziel", "einheit": "Tage", "richtung": "niedriger", "schwellen": [30, 60, 120], "bedeutung": "Ergänzend", "trend": true, "hinweis": "Dauer der Kapitalbindung im operativen Kreislauf."},
     ];
+
+    // Aus Kennzahlen_Bonitaetspruefung.xlsx (Blatt „Weiche Faktoren“)
+    const WEICHE_FAKTOREN = [
+      {"bereich": "Kontoführung", "kriterium": "Überziehungen", "frage": "Wird das Konto im vereinbarten Rahmen geführt?", "positiv": "Keine ungenehmigten Überziehungen, Limit eingehalten", "negativ": "Wiederholte oder dauerhafte ungenehmigte Überziehungen", "einfluss": "Hoch"},
+      {"bereich": "Kontoführung", "kriterium": "Rücklastschriften, Pfändungen", "frage": "Gibt es Rücklastschriften, Mahnungen oder Pfändungen?", "positiv": "Keine", "negativ": "Häufige Rücklastschriften oder Pfändungen", "einfluss": "Hoch"},
+      {"bereich": "Kontoführung", "kriterium": "Entwicklung der Kontoumsätze", "frage": "Passen Zahlungseingänge zu den gemeldeten Umsätzen?", "positiv": "Stabile oder wachsende Eingänge, passend zur BWA", "negativ": "Rückläufige Eingänge, Abweichung zu BWA/Steuerdaten", "einfluss": "Mittel"},
+      {"bereich": "Kontoführung", "kriterium": "Auslastung des Kontokorrents", "frage": "Wie stark wird die Kreditlinie dauerhaft genutzt?", "positiv": "Linie wird schwankend und mit Spielraum genutzt", "negativ": "Linie dauerhaft ausgeschöpft", "einfluss": "Mittel"},
+      {"bereich": "Branche / Markt", "kriterium": "Branchenrisiko", "frage": "Gilt die Branche bei Banken als Risikobranche?", "positiv": "Stabile, wachsende oder krisenfeste Branche", "negativ": "Zyklische oder strukturell schrumpfende Branche", "einfluss": "Hoch"},
+      {"bereich": "Branche / Markt", "kriterium": "Marktposition und Wettbewerb", "frage": "Wie stark ist die Wettbewerbsposition?", "positiv": "Klare Positionierung, Alleinstellungsmerkmale", "negativ": "Austauschbares Angebot, Preisdruck", "einfluss": "Mittel"},
+      {"bereich": "Geschäftsmodell", "kriterium": "Kundenabhängigkeit", "frage": "Wie hoch ist der Umsatzanteil der größten Kunden?", "positiv": "Breite Kundenbasis, kein Kunde dominiert", "negativ": "Ein Großkunde macht einen sehr hohen Umsatzanteil aus", "einfluss": "Hoch"},
+      {"bereich": "Geschäftsmodell", "kriterium": "Lieferantenabhängigkeit", "frage": "Gibt es Klumpenrisiken auf Lieferantenseite?", "positiv": "Mehrere Bezugsquellen", "negativ": "Einzelner Lieferant, schwer ersetzbar", "einfluss": "Mittel"},
+      {"bereich": "Geschäftsmodell", "kriterium": "Vertrieb und Marketing", "frage": "Ist die Vertriebsstrategie nachvollziehbar?", "positiv": "Klare Strategie, planbarer Auftragsbestand", "negativ": "Unklare Pipeline, Zufallsumsätze", "einfluss": "Mittel"},
+      {"bereich": "Management", "kriterium": "Qualifikation und Erfahrung", "frage": "Verfügt die Führung über Branchen- und Führungserfahrung?", "positiv": "Lange Erfahrung, nachweisbarer Track Record", "negativ": "Neue Führung ohne Erfahrung", "einfluss": "Hoch"},
+      {"bereich": "Management", "kriterium": "Nachfolge und Vertretung", "frage": "Ist Nachfolge bzw. Vertretung geregelt?", "positiv": "Geregelte Nachfolge, Know-how dokumentiert", "negativ": "Abhängigkeit von einer Person ohne Vertretung", "einfluss": "Hoch"},
+      {"bereich": "Controlling & Planung", "kriterium": "Qualität des Berichtswesens", "frage": "Gibt es zeitnahe, verlässliche Zahlen?", "positiv": "Monatliche BWA, Soll-Ist-Vergleich, aktueller Abschluss", "negativ": "Abschluss deutlich verspätet, lückenhafte Zahlen", "einfluss": "Hoch"},
+      {"bereich": "Controlling & Planung", "kriterium": "Planungsqualität", "frage": "Sind Plan-, Liquiditäts- und Investitionsplanung vorhanden und schlüssig?", "positiv": "Nachvollziehbare Annahmen, Planungen wurden in der Vergangenheit erreicht", "negativ": "Unrealistische Planung, hohe Abweichungen Plan/Ist", "einfluss": "Hoch"},
+      {"bereich": "Sicherheiten", "kriterium": "Werthaltigkeit der Sicherheiten", "frage": "Decken verwertbare Sicherheiten den Kredit?", "positiv": "Hohe, gut verwertbare Sicherheiten (Immobilien, Bürgschaften)", "negativ": "Kaum oder schwer verwertbare Sicherheiten", "einfluss": "Mittel"},
+      {"bereich": "Sicherheiten", "kriterium": "Haftungsverbünde und Verflechtungen", "frage": "Bestehen Verflechtungen mit anderen Unternehmen oder Gesellschaftern?", "positiv": "Starke Gesellschafter, werthaltige Gesellschafterbürgschaft", "negativ": "Abhängigkeit von schwachen Konzernunternehmen", "einfluss": "Mittel"},
+      {"bereich": "Zusammenarbeit mit der Bank", "kriterium": "Transparenz und Informationsverhalten", "frage": "Werden Unterlagen vollständig und rechtzeitig geliefert?", "positiv": "Aktive, regelmäßige Information über Erfolge und Probleme", "negativ": "Unterlagen verspätet, Probleme werden verschwiegen", "einfluss": "Mittel"},
+      {"bereich": "Zusammenarbeit mit der Bank", "kriterium": "Dauer der Bankverbindung", "frage": "Wie lange besteht die Geschäftsbeziehung?", "positiv": "Lange, stabile Bankverbindung", "negativ": "Häufiger Bankwechsel", "einfluss": "Gering"},
+      {"bereich": "Negativmerkmale", "kriterium": "Auskunfteien und Zahlungsverhalten", "frage": "Gibt es Negativmerkmale bei Auskunfteien (z. B. Schufa, Creditreform)?", "positiv": "Keine Negativmerkmale, pünktliche Zahlungen", "negativ": "Zahlungsausfälle, Inkasso, Insolvenzantrag, Eidesstattliche Versicherung", "einfluss": "Sehr hoch"},
+      {"bereich": "Negativmerkmale", "kriterium": "Steuer- und Sozialabgabenrückstände", "frage": "Bestehen Rückstände bei Finanzamt, Sozialversicherung oder Mieten?", "positiv": "Keine Rückstände", "negativ": "Rückstände, Stundungen, Vollstreckungen", "einfluss": "Hoch"},
+      {"bereich": "Nachhaltigkeit (ESG)", "kriterium": "Nachhaltigkeitsrisiken", "frage": "Gibt es branchenspezifische Nachhaltigkeitsrisiken? Banken fragen dies bei größeren Krediten ab.", "positiv": "Geringe Risiken, nachvollziehbare Maßnahmen", "negativ": "Hohe Transitions- oder Umweltrisiken ohne Gegenmaßnahmen", "einfluss": "Gering bis mittel"},
+    ];
+
+    // Aus Kennzahlen_Bonitaetspruefung.xlsx (Blatt „Rechner“)
+    const PUNKTE_JE_AMPEL = { gruen: 100, gelb: 70, orange: 35, rot: 0 };
+    const SAEULEN_GEWICHTE = {
+      "Kapitalstruktur": 0.25,
+      "Rentabilität": 0.2,
+      "Cashflow & Kapitaldienst": 0.35,
+      "Liquidität & Working Capital": 0.2
+    };
+    const SCORE_GRENZEN = { gruen: 75, gelb: 55, orange: 35 };
 
     const AMPEL_TEXT = {
       gruen: "Gut",
@@ -213,27 +292,40 @@
       na: "Nicht berechenbar"
     };
 
-    function formatKennzahl(meta, wert) {
-      if (wert === null || wert === undefined || !Number.isFinite(wert)) {
-        return "–";
-      }
-      const zahl = (x, stellen) => new Intl.NumberFormat("de-DE", {
+    const AMPEL_FARBE = {
+      gruen: "#2e7d4f",
+      gelb: "#a88400",
+      orange: "#c2651a",
+      rot: "#a83838",
+      info: "#2f4a66",
+      na: "#3a4a5a"
+    };
+
+    function zahlDe(x, stellen) {
+      return new Intl.NumberFormat("de-DE", {
         minimumFractionDigits: stellen,
         maximumFractionDigits: stellen
       }).format(x);
+    }
 
-      if (meta.einheit === "%") return `${zahl(wert * 100, 1)} %`;
+    function istZahl(wert) {
+      return typeof wert === "number" && Number.isFinite(wert);
+    }
+
+    function formatKennzahl(meta, wert) {
+      if (!istZahl(wert)) return "–";
+      if (meta.einheit === "%") return `${zahlDe(wert * 100, 1)} %`;
       if (meta.einheit === "€") return formatEuro(wert);
-      if (meta.einheit === "Tage") return `${zahl(wert, 0)} Tage`;
-      if (meta.einheit === "Jahre") return `${zahl(wert, 1)} Jahre`;
-      if (meta.einheit === "Faktor") return `${zahl(wert, 1)}x`;
-      return zahl(wert, 2);
+      if (meta.einheit === "Tage") return `${zahlDe(wert, 0)} Tage`;
+      if (meta.einheit === "Jahre") return `${zahlDe(wert, 1)} Jahre`;
+      if (meta.einheit === "Faktor") return `${zahlDe(wert, 1)}x`;
+      return zahlDe(wert, 2);
     }
 
     function bewerteKennzahl(meta, ergebnis) {
       if (ergebnis && ergebnis.a) return ergebnis.a;
       const wert = ergebnis ? ergebnis.w : null;
-      if (wert === null || wert === undefined || !Number.isFinite(wert)) return "na";
+      if (!istZahl(wert)) return "na";
       if (!meta.schwellen || meta.richtung === "info") return "info";
 
       const [gut, gelb, kritisch] = meta.schwellen;
@@ -254,6 +346,156 @@
       return `${meta.richtung === "hoeher" ? "≥" : "≤"} ${formatKennzahl(meta, meta.schwellen[0])}`;
     }
 
+    // Veränderung zum Vorjahr als Text; "besser" sagt, ob die Richtung gut ist
+    function vergleichVorjahr(meta, aktuell, vorjahr) {
+      if (!istZahl(aktuell) || !istZahl(vorjahr)) return null;
+      // Unterschiede unterhalb der angezeigten Genauigkeit zählen als unverändert
+      const rundung = { "%": 0.0005, "Tage": 0.5, "Jahre": 0.05, "Faktor": 0.05 }[meta.einheit] || 0;
+      const diff = Math.abs(aktuell - vorjahr) < rundung ? 0 : aktuell - vorjahr;
+      const pfeil = diff > 0 ? "▲" : diff < 0 ? "▼" : "■";
+      const vorzeichen = diff > 0 ? "+" : diff < 0 ? "−" : "±";
+      const betrag = Math.abs(diff);
+
+      let text;
+      if (meta.einheit === "%") text = `${zahlDe(betrag * 100, 1)} %-Pkt.`;
+      else if (meta.einheit === "€") {
+        text = vorjahr !== 0 ? `${zahlDe(betrag / Math.abs(vorjahr) * 100, 1)} %` : formatEuro(betrag);
+      }
+      else if (meta.einheit === "Tage") text = `${zahlDe(betrag, 0)} Tage`;
+      else if (meta.einheit === "Jahre") text = `${zahlDe(betrag, 1)} Jahre`;
+      else text = `${zahlDe(betrag, 1)}x`;
+
+      let besser = null;
+      if (diff !== 0 && meta.richtung === "hoeher") besser = diff > 0;
+      if (diff !== 0 && meta.richtung === "niedriger") besser = diff < 0;
+      if (diff !== 0 && meta.einheit === "€") besser = diff > 0; // Cashflow: mehr ist besser
+      return { text: `${pfeil} ${vorzeichen}${text}`, besser };
+    }
+
+    // Score 0–100 je Säule und gesamt (wie Blatt „Rechner“)
+    function berechneScore(eintrag) {
+      const saeulen = {};
+      Object.keys(SAEULEN_GEWICHTE).forEach((name) => {
+        const punkte = KENNZAHLEN_META
+          .filter((meta) => meta.saeule === name)
+          .map((meta) => PUNKTE_JE_AMPEL[bewerteKennzahl(meta, eintrag.kennzahlen[meta.id])])
+          .filter((p) => p !== undefined);
+        saeulen[name] = punkte.length ? punkte.reduce((a, b) => a + b, 0) / punkte.length : null;
+      });
+
+      let summe = 0;
+      let gewichte = 0;
+      Object.entries(saeulen).forEach(([name, score]) => {
+        if (score === null) return;
+        summe += score * SAEULEN_GEWICHTE[name];
+        gewichte += SAEULEN_GEWICHTE[name];
+      });
+      return { saeulen, gesamt: gewichte > 0 ? summe / gewichte : null };
+    }
+
+    function scoreAmpel(score) {
+      if (score === null) return "na";
+      if (score >= SCORE_GRENZEN.gruen) return "gruen";
+      if (score >= SCORE_GRENZEN.gelb) return "gelb";
+      if (score >= SCORE_GRENZEN.orange) return "orange";
+      return "rot";
+    }
+
+    function neueKarte(titelText, klasse) {
+      const card = document.createElement("div");
+      card.className = `result-card ${klasse}`;
+      const titel = document.createElement("h2");
+      titel.style.textAlign = "center";
+      titel.style.fontSize = "20px";
+      titel.style.marginBottom = "12px";
+      titel.textContent = titelText;
+      card.appendChild(titel);
+      return card;
+    }
+
+    function zelle(tag, text, klasse) {
+      const el = document.createElement(tag);
+      el.textContent = text;
+      if (klasse) el.className = klasse;
+      return el;
+    }
+
+    function hinweisText(text) {
+      const p = document.createElement("p");
+      p.style.fontSize = "12px";
+      p.style.color = "#8aaac8";
+      p.style.marginTop = "12px";
+      p.textContent = text;
+      return p;
+    }
+
+    function baueLegende() {
+      const legende = document.createElement("div");
+      legende.className = "kennzahlen-legende";
+      Object.keys(AMPEL_FARBE).forEach((key) => {
+        const span = document.createElement("span");
+        span.style.setProperty("--farbe", AMPEL_FARBE[key]);
+        span.textContent = AMPEL_TEXT[key];
+        legende.appendChild(span);
+      });
+      return legende;
+    }
+
+    function baueScoreKarte(jahre) {
+      const card = neueKarte("Pre-Rating Score (0–100)", "score-card");
+      const scroll = document.createElement("div");
+      scroll.className = "kennzahlen-scroll";
+      const table = document.createElement("table");
+      table.className = "kennzahlen-tabelle";
+
+      const kopf = document.createElement("tr");
+      kopf.appendChild(zelle("th", "Säule (Gewicht)"));
+      jahre.forEach((e) => kopf.appendChild(zelle("th", e.gj ? `GJ ${e.gj}` : "Wert", "rechts")));
+      if (jahre.length > 1) kopf.appendChild(zelle("th", "Δ Vorjahr", "rechts"));
+      table.appendChild(kopf);
+
+      const scores = jahre.map(berechneScore);
+      const zeilen = Object.keys(SAEULEN_GEWICHTE).map((name) => ({
+        name: `${name} (${zahlDe(SAEULEN_GEWICHTE[name] * 100, 0)} %)`,
+        werte: scores.map((s) => s.saeulen[name])
+      }));
+      zeilen.push({ name: "Gesamtbewertung", werte: scores.map((s) => s.gesamt), gesamt: true });
+
+      zeilen.forEach((zeile) => {
+        const tr = document.createElement("tr");
+        if (zeile.gesamt) tr.className = "gesamt";
+        tr.appendChild(zelle("td", zeile.name));
+        zeile.werte.forEach((score) => {
+          const ampel = scoreAmpel(score);
+          const td = zelle("td", score === null ? "–" : zahlDe(score, 0), `wert ampel-${ampel}`);
+          td.title = AMPEL_TEXT[ampel];
+          tr.appendChild(td);
+        });
+        if (jahre.length > 1) {
+          const n = zeile.werte.length;
+          const a = zeile.werte[n - 1];
+          const v = zeile.werte[n - 2];
+          const td = zelle("td", "–", "vergleich");
+          if (a !== null && v !== null) {
+            const diff = a - v;
+            td.textContent = `${diff > 0 ? "▲ +" : diff < 0 ? "▼ −" : "■ ±"}${zahlDe(Math.abs(diff), 0)} Pkt.`;
+            if (diff !== 0) td.classList.add(diff > 0 ? "besser" : "schlechter");
+          }
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      });
+
+      scroll.appendChild(table);
+      card.appendChild(scroll);
+      card.appendChild(hinweisText(
+        "Punkte je Kennzahl: Grün 100, Gelb 70, Orange 35, Rot 0. Säulen-Score = Durchschnitt, Gesamt = gewichteter Durchschnitt. "
+        + "Ampel: Grün ab 75, Gelb ab 55, Orange ab 35, darunter Rot. Nicht berechenbare Kennzahlen werden ignoriert. "
+        + "Das ist ein Pre-Rating aus harten Faktoren und ersetzt kein Bankrating."
+      ));
+      container.parentElement.insertBefore(card, container);
+    }
+
     function baueKennzahlenTabelle(daten) {
       const jahre = daten.filter((eintrag) => eintrag.kennzahlen);
       if (!jahre.length) {
@@ -266,28 +508,14 @@
         return;
       }
 
-      const card = document.createElement("div");
-      card.className = "result-card kennzahlen-card";
+      baueScoreKarte(jahre);
 
-      const titel = document.createElement("h2");
-      titel.style.textAlign = "center";
-      titel.style.fontSize = "20px";
-      titel.style.marginBottom = "12px";
-      titel.textContent = "Kennzahlen aus Bilanz und GuV";
-      card.appendChild(titel);
+      const mitVergleich = jahre.length > 1;
+      const aktuell = jahre[jahre.length - 1];
+      const vorjahr = mitVergleich ? jahre[jahre.length - 2] : null;
 
-      const legende = document.createElement("div");
-      legende.className = "kennzahlen-legende";
-      [
-        ["gruen", "#2e7d4f"], ["gelb", "#a88400"], ["orange", "#c2651a"],
-        ["rot", "#a83838"], ["info", "#2f4a66"], ["na", "#3a4a5a"]
-      ].forEach(([key, farbe]) => {
-        const span = document.createElement("span");
-        span.style.setProperty("--farbe", farbe);
-        span.textContent = AMPEL_TEXT[key];
-        legende.appendChild(span);
-      });
-      card.appendChild(legende);
+      const card = neueKarte("Kennzahlen aus Bilanz und GuV", "kennzahlen-card");
+      card.appendChild(baueLegende());
 
       const scroll = document.createElement("div");
       scroll.className = "kennzahlen-scroll";
@@ -295,12 +523,10 @@
       table.className = "kennzahlen-tabelle";
 
       const kopf = document.createElement("tr");
-      ["Kennzahl", ...jahre.map((e) => e.gj ? `GJ ${e.gj}` : "Wert"), "Ziel (Grün)"].forEach((text, i) => {
-        const th = document.createElement("th");
-        th.textContent = text;
-        if (i > 0 && i <= jahre.length) th.style.textAlign = "right";
-        kopf.appendChild(th);
-      });
+      kopf.appendChild(zelle("th", "Kennzahl"));
+      jahre.forEach((e) => kopf.appendChild(zelle("th", e.gj ? `GJ ${e.gj}` : "Wert", "rechts")));
+      if (mitVergleich) kopf.appendChild(zelle("th", `Δ ${vorjahr.gj} → ${aktuell.gj}`, "rechts"));
+      kopf.appendChild(zelle("th", "Ziel (Grün)"));
       table.appendChild(kopf);
 
       let aktuelleSaeule = "";
@@ -309,53 +535,86 @@
           aktuelleSaeule = meta.saeule;
           const tr = document.createElement("tr");
           tr.className = "saeule";
-          const th = document.createElement("th");
-          th.colSpan = jahre.length + 2;
-          th.textContent = meta.saeule;
+          const th = zelle("th", meta.saeule);
+          th.colSpan = jahre.length + (mitVergleich ? 3 : 2);
           tr.appendChild(th);
           table.appendChild(tr);
         }
 
         const tr = document.createElement("tr");
-        const tdName = document.createElement("td");
-        tdName.textContent = `${meta.id} ${meta.name}`;
+        const tdName = zelle("td", `${meta.id} ${meta.name}`);
         tdName.title = meta.hinweis || "";
-        const formel = document.createElement("span");
-        formel.className = "formel";
-        formel.textContent = meta.formel;
-        tdName.appendChild(formel);
+        if (meta.bedeutung) tdName.appendChild(zelle("span", meta.bedeutung, `bedeutung bedeutung-${meta.bedeutung.toLowerCase()}`));
+        tdName.appendChild(zelle("span", meta.formel, "formel"));
         tr.appendChild(tdName);
 
         jahre.forEach((eintrag) => {
           const ergebnis = eintrag.kennzahlen[meta.id] || null;
           const ampel = bewerteKennzahl(meta, ergebnis);
-          const td = document.createElement("td");
-          td.className = `wert ampel-${ampel}`;
-          td.textContent = formatKennzahl(meta, ergebnis ? ergebnis.w : null);
+          const td = zelle("td", formatKennzahl(meta, ergebnis ? ergebnis.w : null), `wert ampel-${ampel}`);
           td.title = [AMPEL_TEXT[ampel], ergebnis && ergebnis.h].filter(Boolean).join(" – ");
           tr.appendChild(td);
         });
 
-        const tdZiel = document.createElement("td");
-        tdZiel.className = "ziel";
-        tdZiel.textContent = zielText(meta);
-        tr.appendChild(tdZiel);
+        if (mitVergleich) {
+          const td = zelle("td", "", "vergleich");
+          if (meta.trend) {
+            const a = aktuell.kennzahlen[meta.id];
+            const v = vorjahr.kennzahlen[meta.id];
+            const vergleich = vergleichVorjahr(meta, a ? a.w : null, v ? v.w : null);
+            td.textContent = vergleich ? vergleich.text : "–";
+            if (vergleich && vergleich.besser !== null) td.classList.add(vergleich.besser ? "besser" : "schlechter");
+          }
+          tr.appendChild(td);
+        }
 
+        tr.appendChild(zelle("td", zielText(meta), "ziel"));
         table.appendChild(tr);
       });
 
       scroll.appendChild(table);
       card.appendChild(scroll);
+      card.appendChild(hinweisText(
+        "Schwellenwerte sind Orientierungswerte (Faustwerte), keine Bankvorgaben, und sollten je Branche angepasst werden. "
+        + "Langfristiges Fremdkapital: laut Spalte \"Fristigkeit\" (kurz/lang); ohne diese Spalte gelten Darlehen/Bankverbindlichkeiten und Pensionsrückstellungen als langfristig. "
+        + "C05–C07 brauchen die Zusatzangaben Tilgung, Entnahmen/Ausschüttungen und Investitionen in der GuV-Datei. "
+        + "Vorjahresvergleich (grün = verbessert, rot = verschlechtert) bei ausgewählten Kennzahlen. Mit der Maus über einen Wert fahren für Details."
+      ));
+      container.parentElement.appendChild(card);
+    }
 
-      const hinweis = document.createElement("p");
-      hinweis.style.fontSize = "12px";
-      hinweis.style.color = "#8aaac8";
-      hinweis.style.marginTop = "12px";
-      hinweis.textContent = "Schwellenwerte sind Orientierungswerte (Faustwerte), keine Bankvorgaben, und sollten je Branche angepasst werden. "
-        + "Langfristiges Fremdkapital: Darlehen/Bankverbindlichkeiten und Pensionsrückstellungen, sofern keine Spalte \"Fristigkeit\" (kurz/lang) vorhanden ist. "
-        + "Mit der Maus über einen Wert fahren für Details.";
-      card.appendChild(hinweis);
+    function baueWeicheFaktoren() {
+      const card = neueKarte("Weiche Faktoren (nicht aus Bilanz/GuV ableitbar)", "kennzahlen-card");
+      const details = document.createElement("details");
+      details.appendChild(zelle("summary", `Checkliste mit ${WEICHE_FAKTOREN.length} Kriterien anzeigen, die Banken zusätzlich prüfen`));
 
+      const scroll = document.createElement("div");
+      scroll.className = "kennzahlen-scroll";
+      const table = document.createElement("table");
+      table.className = "kennzahlen-tabelle";
+      const kopf = document.createElement("tr");
+      ["Kriterium", "Prüffrage", "Positiv", "Negativ", "Einfluss"].forEach((t) => kopf.appendChild(zelle("th", t)));
+      table.appendChild(kopf);
+
+      let aktuellerBereich = "";
+      WEICHE_FAKTOREN.forEach((f) => {
+        if (f.bereich !== aktuellerBereich) {
+          aktuellerBereich = f.bereich;
+          const tr = document.createElement("tr");
+          tr.className = "saeule";
+          const th = zelle("th", f.bereich);
+          th.colSpan = 5;
+          tr.appendChild(th);
+          table.appendChild(tr);
+        }
+        const tr = document.createElement("tr");
+        [f.kriterium, f.frage, f.positiv, f.negativ, f.einfluss].forEach((t) => tr.appendChild(zelle("td", t || "")));
+        table.appendChild(tr);
+      });
+
+      scroll.appendChild(table);
+      details.appendChild(scroll);
+      card.appendChild(details);
       container.parentElement.appendChild(card);
     }
 
@@ -707,6 +966,7 @@
     baueKennzahlenTabelle(
       [...ergebnisse].sort((a, b) => String(a.gj || "").localeCompare(String(b.gj || ""), "de", { numeric: true }))
     );
+    baueWeicheFaktoren();
 
     if (trendDaten.length > 0) {
       const jahre = trendDaten.map((eintrag) => eintrag.gj);
