@@ -46,6 +46,83 @@
       height: 420px;
     }
 
+    .kennzahlen-card {
+      margin-top: 24px;
+    }
+
+    .kennzahlen-legende {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin: 0 0 14px 0;
+      font-size: 13px;
+      color: #b0c4de;
+    }
+
+    .kennzahlen-legende span::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: -1px;
+      background: var(--farbe);
+    }
+
+    .kennzahlen-scroll {
+      overflow-x: auto;
+    }
+
+    .kennzahlen-tabelle {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1f2f40;
+      border: 1px solid #36516b;
+      font-size: 14px;
+    }
+
+    .kennzahlen-tabelle th,
+    .kennzahlen-tabelle td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #2b4157;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .kennzahlen-tabelle td.wert {
+      text-align: right;
+      white-space: nowrap;
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    .kennzahlen-tabelle tr.saeule th {
+      background: #24384d;
+      color: #c8ddf5;
+      font-size: 15px;
+    }
+
+    .kennzahlen-tabelle .formel {
+      display: block;
+      font-size: 12px;
+      color: #8aaac8;
+      margin-top: 2px;
+    }
+
+    .kennzahlen-tabelle .ziel {
+      font-size: 12px;
+      color: #b0c4de;
+      white-space: nowrap;
+    }
+
+    .ampel-gruen { background: #2e7d4f; }
+    .ampel-gelb { background: #a88400; }
+    .ampel-orange { background: #c2651a; }
+    .ampel-rot { background: #a83838; }
+    .ampel-info { background: #2f4a66; }
+    .ampel-na { background: #3a4a5a; color: #b0c4de !important; font-weight: normal !important; }
+
     @media (max-width: 980px) {
       #charts-container {
         grid-template-columns: 1fr;
@@ -95,6 +172,183 @@
         return wert;
       }
       return formatEuro(wert);
+    }
+
+    const KENNZAHLEN_META = [
+      {"id": "K01", "saeule": "Kapitalstruktur", "name": "Eigenkapitalquote", "formel": "Eigenkapital / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.3, 0.2, 0.1], "hinweis": "Zentrale Kennzahl im Bankrating. Stark branchenabhängig (Handel/Bau niedriger, Industrie höher). Bilanzsumme ggf. bereinigen (z. B. erhaltene Anzahlungen, Gesellschafterdarlehen)."},
+      {"id": "K02", "saeule": "Kapitalstruktur", "name": "Fremdkapitalquote", "formel": "Fremdkapital / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.7, 0.8, 0.9], "hinweis": "Gegenstück zur Eigenkapitalquote (zusammen 100 %)."},
+      {"id": "K03", "saeule": "Kapitalstruktur", "name": "Verschuldungsgrad", "formel": "Fremdkapital / Eigenkapital", "einheit": "%", "richtung": "niedriger", "schwellen": [1.5, 2, 4], "hinweis": "Banken erwarten laut Quellen max. ca. 200 % (Faktor 2). Bei negativem Eigenkapital wird Rot gesetzt."},
+      {"id": "K04", "saeule": "Kapitalstruktur", "name": "Anlagenintensität", "formel": "Anlagevermögen / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.6, 0.8], "hinweis": "Hohe Anlagenintensität gilt für Banken als weniger günstig, da Maschinen/Gebäude in Notzeiten schlechter verwertbar sind. Sehr branchenabhängig."},
+      {"id": "K05", "saeule": "Kapitalstruktur", "name": "Anlagendeckung I", "formel": "Eigenkapital / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.7, 0.4], "hinweis": "Zeigt, ob das Anlagevermögen durch Eigenkapital gedeckt ist."},
+      {"id": "K06", "saeule": "Kapitalstruktur", "name": "Anlagendeckung II", "formel": "(Eigenkapital + langfr. Fremdkapital) / Anlagevermögen", "einheit": "%", "richtung": "hoeher", "schwellen": [1.2, 1, 0.8], "hinweis": "Goldene Bilanzregel: langfristig gebundenes Vermögen sollte langfristig finanziert sein (mind. 100 %)."},
+      {"id": "K07", "saeule": "Kapitalstruktur", "name": "Bankverbindlichkeitenquote", "formel": "Verbindlichkeiten ggü. Banken / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "hinweis": "Abhängigkeit von Bankfinanzierung."},
+      {"id": "K08", "saeule": "Kapitalstruktur", "name": "Netto-Finanzverbindlichkeitenquote", "formel": "(Finanzverbindlichkeiten – liquide Mittel) / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.25, 0.4, 0.55], "hinweis": "Wird u. a. im Bundesbank-Verfahren (IFRS) verwendet."},
+      {"id": "R01", "saeule": "Rentabilität", "name": "Umsatzrentabilität", "formel": "Ergebnis vor Steuern (EBT) / Gesamtleistung", "einheit": "%", "richtung": "hoeher", "schwellen": [0.05, 0.02, 0], "hinweis": "Ertragskraft je Euro Leistung. Immer mit Branchenwerten vergleichen."},
+      {"id": "R02", "saeule": "Rentabilität", "name": "Gesamtkapitalrentabilität", "formel": "(EBT + Zinsaufwand) / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "hinweis": "Verzinsung des gesamten eingesetzten Kapitals."},
+      {"id": "R03", "saeule": "Rentabilität", "name": "Eigenkapitalrentabilität", "formel": "EBT / Eigenkapital", "einheit": "%", "richtung": "hoeher", "schwellen": [0.15, 0.08, 0.02], "hinweis": "Bei sehr niedrigem EK kann der Wert verzerrt hoch sein. Bei negativem EK wird Rot gesetzt."},
+      {"id": "R04", "saeule": "Rentabilität", "name": "EBITDA-Marge", "formel": "EBITDA / Umsatzerlöse (EBITDA = EBT + Zinsaufwand + Abschreibungen)", "einheit": "%", "richtung": "hoeher", "schwellen": [0.12, 0.06, 0.02], "hinweis": "Operative Ertragskraft vor Zinsen und Abschreibungen."},
+      {"id": "R05", "saeule": "Rentabilität", "name": "Personalaufwandsquote", "formel": "Personalaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.3, 0.45, 0.6], "hinweis": "Kostenstruktur; stark branchenabhängig (Dienstleistung deutlich höher als Handel)."},
+      {"id": "R06", "saeule": "Rentabilität", "name": "Materialaufwandsquote", "formel": "Materialaufwand / Gesamtleistung", "einheit": "%", "richtung": "niedriger", "schwellen": [0.4, 0.55, 0.7], "hinweis": "Kostenstruktur; stark branchenabhängig."},
+      {"id": "R07", "saeule": "Rentabilität", "name": "Umsatzwachstum", "formel": "Umsatz aktuell / Umsatz Vorjahr – 1", "einheit": "%", "richtung": "hoeher", "schwellen": [0.03, 0, -0.1], "hinweis": "Entwicklung der Gesamtleistung über mehrere Jahre ist ein Standardkriterium. Starkes Wachstum kann zusätzlich Liquiditätsbedarf auslösen."},
+      {"id": "C01", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow (absolut)", "formel": "Jahresüberschuss + Abschreibungen ± Veränderung Rückstellungen", "einheit": "€", "richtung": "info", "schwellen": null, "hinweis": "Basisgröße für fast alle Cashflow-Kennzahlen. Sollte positiv und über die Jahre stabil sein. Kein fester Schwellenwert."},
+      {"id": "C02", "saeule": "Cashflow & Kapitaldienst", "name": "Cashflow-Rate", "formel": "Cashflow / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.08, 0.04, 0.01], "hinweis": "Liquiditätswirksame Ertragskraft je Euro Umsatz."},
+      {"id": "C03", "saeule": "Cashflow & Kapitaldienst", "name": "Schuldentilgungsdauer (dynamischer Verschuldungsgrad)", "formel": "(Verbindlichkeiten – liquide Mittel) / Cashflow", "einheit": "Jahre", "richtung": "niedriger", "schwellen": [3, 5, 10], "hinweis": "Wie viele Jahre würde die rechnerische Entschuldung aus dem Cashflow dauern? Bei Cashflow ≤ 0 wird Rot gesetzt."},
+      {"id": "C04", "saeule": "Cashflow & Kapitaldienst", "name": "Zinsdeckung", "formel": "EBIT / Zinsaufwand (EBIT = EBT + Zinsaufwand)", "einheit": "Faktor", "richtung": "hoeher", "schwellen": [5, 3, 1.5], "hinweis": "Wie oft werden die Zinsen aus dem operativen Ergebnis verdient? Ratingagenturen nutzen vergleichbar EBITDA/Zinsen."},
+      {"id": "L01", "saeule": "Liquidität & Working Capital", "name": "Liquidität 1. Grades (Barliquidität)", "formel": "Liquide Mittel / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [0.2, 0.1, 0.05], "hinweis": "Sofort verfügbare Zahlungsfähigkeit."},
+      {"id": "L02", "saeule": "Liquidität & Working Capital", "name": "Liquidität 2. Grades (Einzugsliquidität)", "formel": "(Liquide Mittel + Forderungen) / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1, 0.8, 0.5], "hinweis": "Faustregel: mind. 100 % anstreben."},
+      {"id": "L03", "saeule": "Liquidität & Working Capital", "name": "Liquidität 3. Grades (Umlaufdeckung)", "formel": "Umlaufvermögen / kurzfr. Verbindlichkeiten", "einheit": "%", "richtung": "hoeher", "schwellen": [1.5, 1.2, 1], "hinweis": "Unter 100 % sind kurzfristige Schulden nicht durch Umlaufvermögen gedeckt."},
+      {"id": "L04", "saeule": "Liquidität & Working Capital", "name": "Working Capital (relativ)", "formel": "(Umlaufvermögen – kurzfr. Fremdkapital) / Umsatzerlöse", "einheit": "%", "richtung": "hoeher", "schwellen": [0.1, 0, -0.1], "hinweis": "Positives Working Capital = Finanzierungsspielraum. Lexware nennt auch Verhältnis zum Umsatz zur Vergleichbarkeit."},
+      {"id": "L05", "saeule": "Liquidität & Working Capital", "name": "Debitorenziel (DSO)", "formel": "Forderungen aus L+L / Umsatzerlöse × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [40, 60, 90], "hinweis": "Durchschnittliche Zahlungsdauer der Kunden. Längere Zahlungsziele verschlechtern die Kennzahlen."},
+      {"id": "L06", "saeule": "Liquidität & Working Capital", "name": "Lagerdauer (DIO)", "formel": "Vorräte / Materialaufwand × 360", "einheit": "Tage", "richtung": "niedriger", "schwellen": [45, 90, 150], "hinweis": "Kapitalbindung im Lager. Höherer Warenbestand verschlechtert die Kennzahl."},
+      {"id": "L07", "saeule": "Liquidität & Working Capital", "name": "Kreditorenziel (DPO)", "formel": "Verbindlichkeiten aus L+L / Materialaufwand × 360", "einheit": "Tage", "richtung": "info", "schwellen": null, "hinweis": "Nur zur Einordnung. Sehr hohe Werte können auf Zahlungsverzug bei Lieferanten hindeuten, niedrige auf wenig genutzte Lieferantenkredite."},
+      {"id": "L08", "saeule": "Liquidität & Working Capital", "name": "Cash Conversion Cycle", "formel": "Debitorenziel + Lagerdauer – Kreditorenziel", "einheit": "Tage", "richtung": "niedriger", "schwellen": [30, 60, 120], "hinweis": "Dauer der Kapitalbindung im operativen Kreislauf."},
+    ];
+
+    const AMPEL_TEXT = {
+      gruen: "Gut",
+      gelb: "Akzeptabel",
+      orange: "Kritisch",
+      rot: "Schlecht",
+      info: "Ohne Bewertung",
+      na: "Nicht berechenbar"
+    };
+
+    function formatKennzahl(meta, wert) {
+      if (wert === null || wert === undefined || !Number.isFinite(wert)) {
+        return "–";
+      }
+      const zahl = (x, stellen) => new Intl.NumberFormat("de-DE", {
+        minimumFractionDigits: stellen,
+        maximumFractionDigits: stellen
+      }).format(x);
+
+      if (meta.einheit === "%") return `${zahl(wert * 100, 1)} %`;
+      if (meta.einheit === "€") return formatEuro(wert);
+      if (meta.einheit === "Tage") return `${zahl(wert, 0)} Tage`;
+      if (meta.einheit === "Jahre") return `${zahl(wert, 1)} Jahre`;
+      if (meta.einheit === "Faktor") return `${zahl(wert, 1)}x`;
+      return zahl(wert, 2);
+    }
+
+    function bewerteKennzahl(meta, ergebnis) {
+      if (ergebnis && ergebnis.a) return ergebnis.a;
+      const wert = ergebnis ? ergebnis.w : null;
+      if (wert === null || wert === undefined || !Number.isFinite(wert)) return "na";
+      if (!meta.schwellen || meta.richtung === "info") return "info";
+
+      const [gut, gelb, kritisch] = meta.schwellen;
+      if (meta.richtung === "hoeher") {
+        if (wert >= gut) return "gruen";
+        if (wert >= gelb) return "gelb";
+        if (wert >= kritisch) return "orange";
+        return "rot";
+      }
+      if (wert <= gut) return "gruen";
+      if (wert <= gelb) return "gelb";
+      if (wert <= kritisch) return "orange";
+      return "rot";
+    }
+
+    function zielText(meta) {
+      if (!meta.schwellen || meta.richtung === "info") return "–";
+      return `${meta.richtung === "hoeher" ? "≥" : "≤"} ${formatKennzahl(meta, meta.schwellen[0])}`;
+    }
+
+    function baueKennzahlenTabelle(daten) {
+      const jahre = daten.filter((eintrag) => eintrag.kennzahlen);
+      if (!jahre.length) return;
+
+      const card = document.createElement("div");
+      card.className = "result-card kennzahlen-card";
+
+      const titel = document.createElement("h2");
+      titel.style.textAlign = "center";
+      titel.style.fontSize = "20px";
+      titel.style.marginBottom = "12px";
+      titel.textContent = "Kennzahlen aus Bilanz und GuV";
+      card.appendChild(titel);
+
+      const legende = document.createElement("div");
+      legende.className = "kennzahlen-legende";
+      [
+        ["gruen", "#2e7d4f"], ["gelb", "#a88400"], ["orange", "#c2651a"],
+        ["rot", "#a83838"], ["info", "#2f4a66"], ["na", "#3a4a5a"]
+      ].forEach(([key, farbe]) => {
+        const span = document.createElement("span");
+        span.style.setProperty("--farbe", farbe);
+        span.textContent = AMPEL_TEXT[key];
+        legende.appendChild(span);
+      });
+      card.appendChild(legende);
+
+      const scroll = document.createElement("div");
+      scroll.className = "kennzahlen-scroll";
+      const table = document.createElement("table");
+      table.className = "kennzahlen-tabelle";
+
+      const kopf = document.createElement("tr");
+      ["Kennzahl", ...jahre.map((e) => e.gj ? `GJ ${e.gj}` : "Wert"), "Ziel (Grün)"].forEach((text, i) => {
+        const th = document.createElement("th");
+        th.textContent = text;
+        if (i > 0 && i <= jahre.length) th.style.textAlign = "right";
+        kopf.appendChild(th);
+      });
+      table.appendChild(kopf);
+
+      let aktuelleSaeule = "";
+      KENNZAHLEN_META.forEach((meta) => {
+        if (meta.saeule !== aktuelleSaeule) {
+          aktuelleSaeule = meta.saeule;
+          const tr = document.createElement("tr");
+          tr.className = "saeule";
+          const th = document.createElement("th");
+          th.colSpan = jahre.length + 2;
+          th.textContent = meta.saeule;
+          tr.appendChild(th);
+          table.appendChild(tr);
+        }
+
+        const tr = document.createElement("tr");
+        const tdName = document.createElement("td");
+        tdName.textContent = `${meta.id} ${meta.name}`;
+        tdName.title = meta.hinweis || "";
+        const formel = document.createElement("span");
+        formel.className = "formel";
+        formel.textContent = meta.formel;
+        tdName.appendChild(formel);
+        tr.appendChild(tdName);
+
+        jahre.forEach((eintrag) => {
+          const ergebnis = eintrag.kennzahlen[meta.id] || null;
+          const ampel = bewerteKennzahl(meta, ergebnis);
+          const td = document.createElement("td");
+          td.className = `wert ampel-${ampel}`;
+          td.textContent = formatKennzahl(meta, ergebnis ? ergebnis.w : null);
+          td.title = [AMPEL_TEXT[ampel], ergebnis && ergebnis.h].filter(Boolean).join(" – ");
+          tr.appendChild(td);
+        });
+
+        const tdZiel = document.createElement("td");
+        tdZiel.className = "ziel";
+        tdZiel.textContent = zielText(meta);
+        tr.appendChild(tdZiel);
+
+        table.appendChild(tr);
+      });
+
+      scroll.appendChild(table);
+      card.appendChild(scroll);
+
+      const hinweis = document.createElement("p");
+      hinweis.style.fontSize = "12px";
+      hinweis.style.color = "#8aaac8";
+      hinweis.style.marginTop = "12px";
+      hinweis.textContent = "Schwellenwerte sind Orientierungswerte (Faustwerte), keine Bankvorgaben, und sollten je Branche angepasst werden. "
+        + "Langfristiges Fremdkapital: Darlehen/Bankverbindlichkeiten und Pensionsrückstellungen, sofern keine Spalte \"Fristigkeit\" (kurz/lang) vorhanden ist. "
+        + "Mit der Maus über einen Wert fahren für Details.";
+      card.appendChild(hinweis);
+
+      container.parentElement.appendChild(card);
     }
 
     const rawResults = params.get("results");
@@ -441,6 +695,10 @@
       });
 
     baueAnalyseBericht(trendDaten);
+
+    baueKennzahlenTabelle(
+      [...ergebnisse].sort((a, b) => String(a.gj || "").localeCompare(String(b.gj || ""), "de", { numeric: true }))
+    );
 
     if (trendDaten.length > 0) {
       const jahre = trendDaten.map((eintrag) => eintrag.gj);
