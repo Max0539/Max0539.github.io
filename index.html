@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=45">
+  <link rel="stylesheet" href="index.css?v=46">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -372,43 +372,50 @@
     setupDropzone("dropzone-bilanz", "csvBilanz", "status-bilanz", "data-bilanz");
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
 
-    // Beispieldaten direkt in die Upload-Felder laden (ohne Download)
-    document.getElementById("beispielLaden").addEventListener("click", async () => {
-      const dateien = [
-        ["beispiel_bilanz.csv", "data-bilanz", "status-bilanz"],
-        ["beispiel_guv.csv", "data-guv", "status-guv"]
-      ];
-      try {
-        for (const [datei, dataId, statusId] of dateien) {
-          const antwort = await fetch(datei + "?v=45");
-          if (!antwort.ok) throw new Error(datei + " nicht gefunden");
-          document.getElementById(dataId).textContent = await antwort.text();
-          document.getElementById(statusId).textContent = "✅ " + datei + " (Beispiel 2024–2026)";
-          logMessage("✅ Beispiel geladen: " + datei);
-        }
-      } catch (fehler) {
-        alert("Beispieldaten konnten nicht geladen werden: " + fehler.message);
+    // ===== Beispieldaten =====
+
+    // Lädt eine Beispieldatei vom Server und legt sie ins passende Upload-Feld
+    async function ladeBeispiel(datei, dataId, statusId) {
+      const antwort = await fetch(datei + "?v=46");
+      if (!antwort.ok) {
+        alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
+        return;
       }
+      const text = await antwort.text();
+      document.getElementById(dataId).textContent = text;
+      document.getElementById(statusId).textContent = "✅ " + datei + " (Beispiel 2024–2026)";
+      logMessage("✅ Beispiel geladen: " + datei);
+    }
+
+    // Button "Beispieldaten direkt laden": beide Dateien laden, ohne Download
+    document.getElementById("beispielLaden").addEventListener("click", function () {
+      ladeBeispiel("beispiel_bilanz.csv", "data-bilanz", "status-bilanz");
+      ladeBeispiel("beispiel_guv.csv", "data-guv", "status-guv");
     });
 
-    // Beide Beispieldateien nacheinander herunterladen
-    document.getElementById("beispielHerunterladen").addEventListener("click", () => {
-      ["beispiel_bilanz.csv", "beispiel_guv.csv"].forEach((datei, i) => {
-        setTimeout(() => {
-          const link = document.createElement("a");
-          link.href = datei;
-          link.download = datei;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-        }, i * 500);
-      });
+    // Startet den Download einer Datei (wie ein Klick auf einen Download-Link)
+    function starteDownload(datei) {
+      const link = document.createElement("a");
+      link.href = datei;
+      link.download = datei;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    // Button "Bilanz + GuV herunterladen": beide Dateien nacheinander herunterladen
+    document.getElementById("beispielHerunterladen").addEventListener("click", function () {
+      starteDownload("beispiel_bilanz.csv");
+      // Kurz warten, sonst blockieren manche Browser den zweiten Download
+      setTimeout(function () {
+        starteDownload("beispiel_guv.csv");
+      }, 500);
     });
   </script>
 
   <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
-  <script type="py" src="app.py?v=45"></script>
+  <script type="py" src="app.py?v=46"></script>
 
-  <div id="version">v45</div>
+  <div id="version">v46</div>
 </body>
 </html>

@@ -5,7 +5,7 @@ from datetime import datetime
 
 AKTUELLES_JAHR = datetime.now().year
 # Bei jeder neuen Version erhöhen (auch in index.html), damit Browser keine alten Dateien aus dem Cache laden
-VERSION = "45"
+VERSION = "46"
 
 
 def parse_csv(text):
@@ -108,9 +108,13 @@ def hole_gj_liste(daten):
 
 
 def ist_zusatzangabe(zeile):
-    """Zeilen mit Kategorie "Zusatzangaben" gehören nicht zur GuV-Rechnung
-    (z. B. Tilgung, Entnahmen, Investitionen für die Kapitaldienstfähigkeit)."""
-    return "zusatz" in normalisiere_text(zeile.get("Kategorie", ""))
+    """Prüft, ob eine GuV-Zeile eine Zusatzangabe ist (Kategorie "Zusatzangaben").
+
+    Zusatzangaben sind z. B. Tilgung, Entnahmen und Investitionen. Sie werden für den
+    Kapitaldienst gebraucht, gehören aber nicht zum Jahresergebnis.
+    """
+    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
+    return "zusatz" in kategorie
 
 
 def hole_guv_seite(zeile):
@@ -262,19 +266,43 @@ def baue_financel_overview(bilanz_jahr, guv_jahr, bilanzsumme_aktiva, eigenkapit
     }
 
 
+# ============================================================
+# Kennzahlen aus Bilanz und GuV
+# ============================================================
+#
+# Ablauf:
+# 1. sammle_bilanz_posten()  -> zählt die wichtigen Bilanzposten eines Jahres zusammen
+# 2. sammle_guv_posten()     -> zählt die wichtigen GuV-Posten eines Jahres zusammen
+# 3. berechne_kennzahlen()   -> rechnet daraus alle Kennzahlen aus
+#
+# Jede Kennzahl wird so gespeichert:
+#   {"wert": 0.25, "hinweis": "...", "ampel": "rot"}
+#   - wert:    die Zahl (Prozent als Anteil, also 0.25 = 25 %) oder None, wenn nicht berechenbar
+#   - hinweis: Erklärung, z. B. "Vorjahr fehlt" (optional)
+#   - ampel:   nur bei Sonderfällen, z. B. "rot" bei negativem Eigenkapital (optional)
+# Die Ampelfarben selbst werden auf der Ergebnisseite (index2.html) bestimmt.
+
+
 def ist_lul(text):
-    """Erkennt Positionen aus Lieferungen und Leistungen."""
-    return "lul" in text or "l+l" in text or "lieferungen und leistungen" in text
+    """Prüft, ob eine Position zu "Lieferungen und Leistungen" gehört."""
+    if "lul" in text:
+        return True
+    if "l+l" in text:
+        return True
+    if "lieferungen und leistungen" in text:
+        return True
+    return False
 
 
 def sammle_bilanz_posten(bilanz_jahr):
-    """Summiert die für die Kennzahlen benötigten Bilanzposten eines Jahres.
+    """Zählt die Bilanzposten eines Jahres zusammen, die für die Kennzahlen gebraucht werden.
 
-    Langfristiges Fremdkapital: Wenn eine Spalte "Fristigkeit" (kurz/lang) vorhanden ist,
-    wird sie verwendet. Sonst gelten Darlehen/Bankverbindlichkeiten und
-    Pensionsrückstellungen als langfristig, alles andere als kurzfristig.
+    Langfristiges Fremdkapital:
+    - Wenn die Spalte "Fristigkeit" ausgefüllt ist (kurz/lang), wird sie verwendet.
+    - Sonst gelten Darlehen, Bankschulden und Pensionsrückstellungen als langfristig.
     """
-    p = {
+    # Alle Summen starten bei 0
+    posten = {
         "bilanzsumme": 0.0,
         "eigenkapital": 0.0,
         "fremdkapital": 0.0,
@@ -293,6 +321,7 @@ def sammle_bilanz_posten(bilanz_jahr):
     }
 
     for zeile in bilanz_jahr:
+        # Werte aus der Zeile lesen (Text klein und ohne Umlaute, damit der Vergleich klappt)
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
         seite = text_klein(zeile, "Seite")
         kategorie = normalisiere_text(zeile.get("Kategorie", ""))
@@ -300,62 +329,78 @@ def sammle_bilanz_posten(bilanz_jahr):
         position = normalisiere_text(zeile.get("Bilanzposition", ""))
         fristigkeit = normalisiere_text(zeile.get("Fristigkeit", "") or "")
 
+        # ---------- Aktiva ----------
         if seite == "aktiva":
-            p["bilanzsumme"] += betrag
-            if "anlageverm" in kategorie or "finanzanlage" in kategorie:
-                p["anlagevermoegen"] += betrag
-            elif "umlaufverm" in kategorie:
-                p["umlaufvermoegen"] += betrag
-                if "liquide mittel" in unterkategorie:
-                    p["liquide_mittel"] += betrag
-                if "vorraete" in unterkategorie or "vorraete" in position:
-                    p["vorraete"] += betrag
-                if "forderung" in unterkategorie:
-                    p["forderungen"] += betrag
-                    if ist_lul(position):
-                        p["forderungen_lul"] += betrag
+            posten["bilanzsumme"] += betrag
 
+            if "anlageverm" in kategorie or "finanzanlage" in kategorie:
+                posten["anlagevermoegen"] += betrag
+
+            elif "umlaufverm" in kategorie:
+                posten["umlaufvermoegen"] += betrag
+
+                if "liquide mittel" in unterkategorie:
+                    posten["liquide_mittel"] += betrag
+                if "vorraete" in unterkategorie or "vorraete" in position:
+                    posten["vorraete"] += betrag
+                if "forderung" in unterkategorie:
+                    posten["forderungen"] += betrag
+                    if ist_lul(position):
+                        posten["forderungen_lul"] += betrag
+
+        # ---------- Passiva ----------
         elif seite == "passiva":
             if kategorie == "eigenkapital":
-                p["eigenkapital"] += betrag
-                continue
+                posten["eigenkapital"] += betrag
+                continue  # Eigenkapital ist kein Fremdkapital -> nächste Zeile
 
-            p["fremdkapital"] += betrag
+            # Alles andere auf der Passivseite ist Fremdkapital
+            posten["fremdkapital"] += betrag
             ist_langfristig = False
 
             if "rueckstellung" in kategorie:
-                p["rueckstellungen"] += betrag
+                posten["rueckstellungen"] += betrag
                 if "pension" in unterkategorie or "pension" in position:
                     ist_langfristig = True
 
             if "verbindlichkeit" in kategorie:
-                p["verbindlichkeiten"] += betrag
-                ist_bank = "bank" in unterkategorie or "bank" in position or "kreditinstitut" in position
-                ist_darlehen = "darlehen" in unterkategorie or "darlehen" in position or "anleihe" in position
+                posten["verbindlichkeiten"] += betrag
+
+                ist_bank = False
+                if "bank" in unterkategorie or "bank" in position or "kreditinstitut" in position:
+                    ist_bank = True
+
+                ist_darlehen = False
+                if "darlehen" in unterkategorie or "darlehen" in position or "anleihe" in position:
+                    ist_darlehen = True
+
                 if ist_bank:
-                    p["bankverbindlichkeiten"] += betrag
+                    posten["bankverbindlichkeiten"] += betrag
                 if ist_bank or ist_darlehen:
-                    p["finanzverbindlichkeiten"] += betrag
+                    posten["finanzverbindlichkeiten"] += betrag
                     ist_langfristig = True
                 if "lieferant" in unterkategorie or ist_lul(position):
-                    p["verbindlichkeiten_lul"] += betrag
+                    posten["verbindlichkeiten_lul"] += betrag
 
-            if fristigkeit:
+            # Wenn die Spalte "Fristigkeit" ausgefüllt ist, gilt sie
+            if fristigkeit != "":
                 ist_langfristig = "lang" in fristigkeit
+
             if ist_langfristig:
-                p["langfr_fk"] += betrag
+                posten["langfr_fk"] += betrag
 
-    # Ohne LuL-Kennzeichnung alle Forderungen für das Debitorenziel verwenden
-    if p["forderungen_lul"] == 0:
-        p["forderungen_lul"] = p["forderungen"]
+    # Wenn keine Forderung als "LuL" erkennbar war, alle Forderungen nehmen
+    if posten["forderungen_lul"] == 0:
+        posten["forderungen_lul"] = posten["forderungen"]
 
-    p["kurzfr_fk"] = p["fremdkapital"] - p["langfr_fk"]
-    return p
+    # Kurzfristiges Fremdkapital = Fremdkapital - langfristiges Fremdkapital
+    posten["kurzfr_fk"] = posten["fremdkapital"] - posten["langfr_fk"]
+    return posten
 
 
 def sammle_guv_posten(guv_jahr):
-    """Summiert die für die Kennzahlen benötigten GuV-Posten eines Jahres."""
-    p = {
+    """Zählt die GuV-Posten eines Jahres zusammen, die für die Kennzahlen gebraucht werden."""
+    posten = {
         "ertraege": 0.0,
         "aufwendungen": 0.0,
         "umsatz": 0.0,
@@ -366,197 +411,251 @@ def sammle_guv_posten(guv_jahr):
         "abschreibungen": 0.0,
         "zinsaufwand": 0.0,
         "steuern": 0.0,
-        # Zusatzangaben: None = nicht angegeben
-        "tilgung": None,
-        "entnahmen": None,
-        "investitionen": None,
     }
+
+    # Zusatzangaben (stehen nicht in der GuV, sind aber für den Kapitaldienst nötig).
+    # None bedeutet: In der Datei nicht angegeben.
+    tilgung = None
+    entnahmen = None
+    investitionen = None
 
     for zeile in guv_jahr:
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
         seite = hole_guv_seite(zeile)
         position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
 
+        # ---------- Zusatzangaben ----------
         if ist_zusatzangabe(zeile):
             if "tilgung" in position:
-                schluessel = "tilgung"
+                if tilgung is None:
+                    tilgung = 0.0
+                tilgung += betrag
             elif "entnahme" in position or "ausschuettung" in position:
-                schluessel = "entnahmen"
+                if entnahmen is None:
+                    entnahmen = 0.0
+                entnahmen += betrag
             elif "investition" in position:
-                schluessel = "investitionen"
-            else:
-                continue
-            p[schluessel] = (p[schluessel] or 0.0) + betrag
-            continue
+                if investitionen is None:
+                    investitionen = 0.0
+                investitionen += betrag
+            continue  # Zusatzangaben gehören nicht zum Jahresergebnis
 
+        # ---------- Erträge (Haben) ----------
         if seite == "haben":
-            p["ertraege"] += betrag
+            posten["ertraege"] += betrag
             if "umsatz" in position:
-                p["umsatz"] += betrag
+                posten["umsatz"] += betrag
             if "bestandsver" in position:
-                p["bestandsveraenderung"] += betrag
+                posten["bestandsveraenderung"] += betrag
             if "eigenleistung" in position:
-                p["eigenleistungen"] += betrag
+                posten["eigenleistungen"] += betrag
+
+        # ---------- Aufwendungen (Soll) ----------
         elif seite == "soll":
-            p["aufwendungen"] += betrag
+            posten["aufwendungen"] += betrag
             if "bestandsver" in position:
-                p["bestandsveraenderung"] -= betrag
+                posten["bestandsveraenderung"] -= betrag
             elif "material" in position:
-                p["materialaufwand"] += betrag
+                posten["materialaufwand"] += betrag
             elif "personal" in position:
-                p["personalaufwand"] += betrag
+                posten["personalaufwand"] += betrag
             elif "abschreibung" in position:
-                p["abschreibungen"] += betrag
+                posten["abschreibungen"] += betrag
             elif "zins" in position:
-                p["zinsaufwand"] += betrag
+                posten["zinsaufwand"] += betrag
             elif "steuer" in position and "sonstige steuer" not in position:
-                p["steuern"] += betrag
+                posten["steuern"] += betrag
 
-    if p["umsatz"] == 0:
-        p["umsatz"] = p["ertraege"]
+    # Wenn keine Zeile "Umsatz" heißt, alle Erträge als Umsatz nehmen
+    if posten["umsatz"] == 0:
+        posten["umsatz"] = posten["ertraege"]
 
-    p["jahresueberschuss"] = p["ertraege"] - p["aufwendungen"]
-    p["ebt"] = p["jahresueberschuss"] + p["steuern"]
-    p["ebit"] = p["ebt"] + p["zinsaufwand"]
-    p["ebitda"] = p["ebit"] + p["abschreibungen"]
-    p["gesamtleistung"] = p["umsatz"] + p["bestandsveraenderung"] + p["eigenleistungen"]
-    return p
+    posten["tilgung"] = tilgung
+    posten["entnahmen"] = entnahmen
+    posten["investitionen"] = investitionen
+
+    # Ergebnisgrößen ausrechnen
+    posten["jahresueberschuss"] = posten["ertraege"] - posten["aufwendungen"]
+    posten["ebt"] = posten["jahresueberschuss"] + posten["steuern"]       # Ergebnis vor Steuern
+    posten["ebit"] = posten["ebt"] + posten["zinsaufwand"]                # Ergebnis vor Zinsen und Steuern
+    posten["ebitda"] = posten["ebit"] + posten["abschreibungen"]          # ... und vor Abschreibungen
+    posten["gesamtleistung"] = (
+        posten["umsatz"] + posten["bestandsveraenderung"] + posten["eigenleistungen"]
+    )
+    return posten
 
 
 def teile(zaehler, nenner):
-    if zaehler is None or nenner is None or nenner == 0:
+    """Teilt zwei Zahlen. Gibt None zurück, wenn man nicht teilen kann (z. B. durch 0)."""
+    if zaehler is None or nenner is None:
+        return None
+    if nenner == 0:
         return None
     return zaehler / nenner
 
 
 def durchschnitt(aktuell, vorjahr):
-    """Durchschnittsbestand, wenn ein Vorjahr vorhanden ist, sonst Stichtagswert."""
+    """Mittelwert aus aktuellem Jahr und Vorjahr. Ohne Vorjahr: nur der aktuelle Wert."""
     if vorjahr is None:
         return aktuell
     return (aktuell + vorjahr) / 2
 
 
-def berechne_kennzahlen(b, g, vb=None, vg=None):
-    """Berechnet alle Kennzahlen aus Bilanz (b) und GuV (g), optional mit Vorjahr (vb, vg).
+def kennzahl(wert, hinweis="", ampel=""):
+    """Baut den Eintrag für eine Kennzahl: {"wert": ..., "hinweis": ..., "ampel": ...}"""
+    eintrag = {}
+    if wert is None:
+        eintrag["wert"] = None
+    else:
+        eintrag["wert"] = round(wert, 6)
+    if hinweis != "":
+        eintrag["hinweis"] = hinweis
+    if ampel != "":
+        eintrag["ampel"] = ampel
+    return eintrag
 
-    Rückgabe: {ID: {"w": Wert oder None, "h": Hinweis, "a": erzwungene Ampel}}
-    Prozentwerte werden als Anteil (0.25 = 25 %) geliefert.
+
+def berechne_kennzahlen(bilanz, guv, bilanz_vorjahr=None, guv_vorjahr=None):
+    """Berechnet alle Kennzahlen eines Jahres.
+
+    bilanz, guv: Posten des aktuellen Jahres (von sammle_bilanz_posten / sammle_guv_posten)
+    bilanz_vorjahr, guv_vorjahr: Posten des Vorjahres oder None, wenn es kein Vorjahr gibt
     """
     k = {}
 
-    def setze(kid, wert, hinweis="", ampel=""):
-        eintrag = {"w": None if wert is None else round(wert, 6)}
-        if hinweis:
-            eintrag["h"] = hinweis
-        if ampel:
-            eintrag["a"] = ampel
-        k[kid] = eintrag
+    # Häufig gebrauchte Werte in kurze Variablen schreiben
+    ek = bilanz["eigenkapital"]
+    bs = bilanz["bilanzsumme"]
+    fk = bilanz["fremdkapital"]
+    av = bilanz["anlagevermoegen"]
+    kurzfr_fk = bilanz["kurzfr_fk"]
+    liquide = bilanz["liquide_mittel"]
+    umsatz = guv["umsatz"]
+    gesamtleistung = guv["gesamtleistung"]
+    zins = guv["zinsaufwand"]
+    hat_vorjahr = bilanz_vorjahr is not None
 
-    ek = b["eigenkapital"]
-    bs = b["bilanzsumme"]
-    fk = b["fremdkapital"]
-    av = b["anlagevermoegen"]
-    kfk = b["kurzfr_fk"]
-    umsatz = g["umsatz"]
-    gl = g["gesamtleistung"]
-
-    # Kapitalstruktur
-    setze("K01", teile(ek, bs))
-    setze("K02", teile(fk, bs))
+    # ---------- Kapitalstruktur (K01-K08) ----------
+    k["K01"] = kennzahl(teile(ek, bs))                       # Eigenkapitalquote
+    k["K02"] = kennzahl(teile(fk, bs))                       # Fremdkapitalquote
     if ek > 0:
-        setze("K03", teile(fk, ek))
+        k["K03"] = kennzahl(teile(fk, ek))                   # Verschuldungsgrad
     else:
-        setze("K03", None, "Eigenkapital ≤ 0", "rot")
-    setze("K04", teile(av, bs))
-    setze("K05", teile(ek, av))
-    setze("K06", teile(ek + b["langfr_fk"], av))
-    setze("K07", teile(b["bankverbindlichkeiten"], bs))
-    setze("K08", teile(b["finanzverbindlichkeiten"] - b["liquide_mittel"], bs))
+        k["K03"] = kennzahl(None, "Eigenkapital ≤ 0", "rot")
+    k["K04"] = kennzahl(teile(av, bs))                       # Anlagenintensität
+    k["K05"] = kennzahl(teile(ek, av))                       # Anlagendeckung I
+    k["K06"] = kennzahl(teile(ek + bilanz["langfr_fk"], av))  # Anlagendeckung II
+    k["K07"] = kennzahl(teile(bilanz["bankverbindlichkeiten"], bs))
+    k["K08"] = kennzahl(teile(bilanz["finanzverbindlichkeiten"] - liquide, bs))
 
-    # Rentabilität
-    setze("R01", teile(g["ebt"], gl))
-    setze("R02", teile(g["ebt"] + g["zinsaufwand"], bs))
+    # ---------- Rentabilität (R01-R07) ----------
+    k["R01"] = kennzahl(teile(guv["ebt"], gesamtleistung))   # Umsatzrentabilität
+    k["R02"] = kennzahl(teile(guv["ebt"] + zins, bs))        # Gesamtkapitalrentabilität
     if ek > 0:
-        setze("R03", teile(g["ebt"], ek))
+        k["R03"] = kennzahl(teile(guv["ebt"], ek))           # Eigenkapitalrentabilität
     else:
-        setze("R03", None, "Eigenkapital ≤ 0", "rot")
-    setze("R04", teile(g["ebitda"], umsatz))
-    setze("R05", teile(g["personalaufwand"], gl))
-    setze("R06", teile(g["materialaufwand"], gl))
-    if vg and vg["umsatz"] > 0:
-        setze("R07", umsatz / vg["umsatz"] - 1)
+        k["R03"] = kennzahl(None, "Eigenkapital ≤ 0", "rot")
+    k["R04"] = kennzahl(teile(guv["ebitda"], umsatz))        # EBITDA-Marge
+    k["R05"] = kennzahl(teile(guv["personalaufwand"], gesamtleistung))
+    k["R06"] = kennzahl(teile(guv["materialaufwand"], gesamtleistung))
+    if guv_vorjahr is not None and guv_vorjahr["umsatz"] > 0:
+        k["R07"] = kennzahl(umsatz / guv_vorjahr["umsatz"] - 1)  # Umsatzwachstum
     else:
-        setze("R07", None, "Vorjahr fehlt")
+        k["R07"] = kennzahl(None, "Vorjahr fehlt")
 
-    # Cashflow & Kapitaldienst
-    cashflow = g["jahresueberschuss"] + g["abschreibungen"]
-    cf_hinweis = ""
-    if vb is not None:
-        cashflow += b["rueckstellungen"] - vb["rueckstellungen"]
+    # ---------- Cashflow & Kapitaldienst (C01-C07) ----------
+    # Cashflow = Jahresüberschuss + Abschreibungen + Veränderung der Rückstellungen
+    cashflow = guv["jahresueberschuss"] + guv["abschreibungen"]
+    if hat_vorjahr:
+        cashflow = cashflow + bilanz["rueckstellungen"] - bilanz_vorjahr["rueckstellungen"]
+        cf_hinweis = ""
     else:
         cf_hinweis = "Vereinfacht ohne Vorjahr (ohne Veränderung der Rückstellungen)"
-    setze("C01", cashflow, cf_hinweis)
-    setze("C02", teile(cashflow, umsatz), cf_hinweis)
-    if cashflow > 0:
-        netto_schulden = max(b["verbindlichkeiten"] - b["liquide_mittel"], 0.0)
-        setze("C03", netto_schulden / cashflow, cf_hinweis)
-    else:
-        setze("C03", None, "Cashflow ≤ 0", "rot")
-    if g["zinsaufwand"] > 0:
-        setze("C04", teile(g["ebit"], g["zinsaufwand"]))
-    else:
-        setze("C04", None, "Kein Zinsaufwand")
 
-    # Kapitaldienstfähigkeit (braucht Zusatzangaben in der GuV-Datei)
-    zins = g["zinsaufwand"]
-    tilgung = g["tilgung"]
-    if g["entnahmen"] is None or g["investitionen"] is None:
-        kdg = None
-        setze("C05", None, "Zusatzangaben Entnahmen/Ausschüttungen und Investitionen fehlen")
-    else:
-        erweiterter_cashflow = cashflow + zins - g["entnahmen"]
-        kdg = erweiterter_cashflow - g["investitionen"]
-        setze("C05", kdg, cf_hinweis, "rot" if kdg <= 0 else "")
+    k["C01"] = kennzahl(cashflow, cf_hinweis)                     # Cashflow
+    k["C02"] = kennzahl(teile(cashflow, umsatz), cf_hinweis)      # Cashflow-Rate
 
-    if kdg is None or tilgung is None:
-        setze("C06", None, "Zusatzangaben Tilgung, Entnahmen oder Investitionen fehlen")
-    elif kdg <= 0:
-        setze("C06", None, "Kapitaldienstgrenze ≤ 0", "rot")
+    if cashflow > 0:                                              # Schuldentilgungsdauer
+        netto_schulden = bilanz["verbindlichkeiten"] - liquide
+        if netto_schulden < 0:
+            netto_schulden = 0.0
+        k["C03"] = kennzahl(netto_schulden / cashflow, cf_hinweis)
     else:
-        setze("C06", (zins + tilgung) / kdg, cf_hinweis)
+        k["C03"] = kennzahl(None, "Cashflow ≤ 0", "rot")
 
+    if zins > 0:                                                  # Zinsdeckung
+        k["C04"] = kennzahl(guv["ebit"] / zins)
+    else:
+        k["C04"] = kennzahl(None, "Kein Zinsaufwand")
+
+    # Kapitaldienst: braucht die Zusatzangaben aus der GuV-Datei
+    tilgung = guv["tilgung"]
+    entnahmen = guv["entnahmen"]
+    investitionen = guv["investitionen"]
+
+    # C05 Kapitaldienstgrenze = erweiterter Cashflow - betriebsnotwendige Investitionen
+    kapitaldienstgrenze = None
+    if entnahmen is None or investitionen is None:
+        k["C05"] = kennzahl(None, "Zusatzangaben Entnahmen/Ausschüttungen und Investitionen fehlen")
+    else:
+        erweiterter_cashflow = cashflow + zins - entnahmen
+        kapitaldienstgrenze = erweiterter_cashflow - investitionen
+        if kapitaldienstgrenze <= 0:
+            k["C05"] = kennzahl(kapitaldienstgrenze, cf_hinweis, "rot")
+        else:
+            k["C05"] = kennzahl(kapitaldienstgrenze, cf_hinweis)
+
+    # C06 Auslastung = Kapitaldienst (Zins + Tilgung) / Kapitaldienstgrenze
+    if kapitaldienstgrenze is None or tilgung is None:
+        k["C06"] = kennzahl(None, "Zusatzangaben Tilgung, Entnahmen oder Investitionen fehlen")
+    elif kapitaldienstgrenze <= 0:
+        k["C06"] = kennzahl(None, "Kapitaldienstgrenze ≤ 0", "rot")
+    else:
+        k["C06"] = kennzahl((zins + tilgung) / kapitaldienstgrenze, cf_hinweis)
+
+    # C07 DSCR = (Cashflow + Zins) / (Zins + Tilgung)
     if tilgung is None:
-        setze("C07", None, "Zusatzangabe Tilgung fehlt")
+        k["C07"] = kennzahl(None, "Zusatzangabe Tilgung fehlt")
     else:
-        setze("C07", teile(cashflow + zins, zins + tilgung), cf_hinweis)
+        k["C07"] = kennzahl(teile(cashflow + zins, zins + tilgung), cf_hinweis)
 
-    # Liquidität & Working Capital
-    setze("L01", teile(b["liquide_mittel"], kfk))
-    setze("L02", teile(b["liquide_mittel"] + b["forderungen"], kfk))
-    setze("L03", teile(b["umlaufvermoegen"], kfk))
-    setze("L04", teile(b["umlaufvermoegen"] - kfk, umsatz))
+    # ---------- Liquidität & Working Capital (L01-L08) ----------
+    k["L01"] = kennzahl(teile(liquide, kurzfr_fk))                            # Liquidität 1. Grades
+    k["L02"] = kennzahl(teile(liquide + bilanz["forderungen"], kurzfr_fk))    # Liquidität 2. Grades
+    k["L03"] = kennzahl(teile(bilanz["umlaufvermoegen"], kurzfr_fk))          # Liquidität 3. Grades
+    k["L04"] = kennzahl(teile(bilanz["umlaufvermoegen"] - kurzfr_fk, umsatz))  # Working Capital
 
-    tage_hinweis = "Durchschnittsbestand mit Vorjahr" if vb is not None else "Stichtagswert (kein Vorjahr)"
-    vor = vb or {}
-    dso = teile(durchschnitt(b["forderungen_lul"], vor.get("forderungen_lul")) * 360, umsatz)
-    dio = teile(durchschnitt(b["vorraete"], vor.get("vorraete")) * 360, g["materialaufwand"])
-    dpo = teile(durchschnitt(b["verbindlichkeiten_lul"], vor.get("verbindlichkeiten_lul")) * 360, g["materialaufwand"])
-    setze("L05", dso, tage_hinweis)
-    setze("L06", dio, tage_hinweis)
-    setze("L07", dpo, tage_hinweis)
-    if dso is not None and dio is not None and dpo is not None:
-        setze("L08", dso + dio - dpo, tage_hinweis)
+    # Für die Tage-Kennzahlen mit Vorjahr den Durchschnittsbestand nehmen
+    if hat_vorjahr:
+        tage_hinweis = "Durchschnittsbestand mit Vorjahr"
+        forderungen = durchschnitt(bilanz["forderungen_lul"], bilanz_vorjahr["forderungen_lul"])
+        vorraete = durchschnitt(bilanz["vorraete"], bilanz_vorjahr["vorraete"])
+        verb_lul = durchschnitt(bilanz["verbindlichkeiten_lul"], bilanz_vorjahr["verbindlichkeiten_lul"])
     else:
-        setze("L08", None, "DSO, DIO oder DPO nicht berechenbar")
+        tage_hinweis = "Stichtagswert (kein Vorjahr)"
+        forderungen = bilanz["forderungen_lul"]
+        vorraete = bilanz["vorraete"]
+        verb_lul = bilanz["verbindlichkeiten_lul"]
+
+    dso = teile(forderungen * 360, umsatz)                       # Debitorenziel
+    dio = teile(vorraete * 360, guv["materialaufwand"])          # Lagerdauer
+    dpo = teile(verb_lul * 360, guv["materialaufwand"])          # Kreditorenziel
+    k["L05"] = kennzahl(dso, tage_hinweis)
+    k["L06"] = kennzahl(dio, tage_hinweis)
+    k["L07"] = kennzahl(dpo, tage_hinweis)
+    if dso is None or dio is None or dpo is None:
+        k["L08"] = kennzahl(None, "DSO, DIO oder DPO nicht berechenbar")
+    else:
+        k["L08"] = kennzahl(dso + dio - dpo, tage_hinweis)        # Cash Conversion Cycle
 
     return k
 
 
 def vorjahr_von(jahr):
-    try:
-        return str(int(jahr) - 1)
-    except ValueError:
+    """Gibt das Vorjahr als Text zurück, z. B. "2025" -> "2024"."""
+    if not jahr.isdigit():
         return ""
+    return str(int(jahr) - 1)
 
 
 def analysiere_alle_jahre(bilanz, guv):
@@ -572,6 +671,8 @@ def analysiere_alle_jahre(bilanz, guv):
         return None, "⚠️ Keine gemeinsamen GJ-Daten in Bilanz und GuV gefunden.", []
 
     ergebnisse = []
+
+    # Zuerst für jedes Jahr die Posten sammeln, damit wir später aufs Vorjahr zugreifen können
     bilanz_posten = {}
     guv_posten = {}
     for jahr in gemeinsame_jahre:
@@ -596,12 +697,19 @@ def analysiere_alle_jahre(bilanz, guv):
             eigenkapital,
         )
 
+        # Vorjahr suchen (gibt es nicht, wenn es das älteste Jahr ist)
         vorjahr = vorjahr_von(jahr)
+        bilanz_vorjahr = None
+        guv_vorjahr = None
+        if vorjahr in bilanz_posten:
+            bilanz_vorjahr = bilanz_posten[vorjahr]
+            guv_vorjahr = guv_posten[vorjahr]
+
         kennzahlen = berechne_kennzahlen(
             bilanz_posten[jahr],
             guv_posten[jahr],
-            bilanz_posten.get(vorjahr),
-            guv_posten.get(vorjahr),
+            bilanz_vorjahr,
+            guv_vorjahr,
         )
 
         ergebnisse.append(
