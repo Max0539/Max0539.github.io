@@ -5,7 +5,7 @@ from datetime import datetime
 
 AKTUELLES_JAHR = datetime.now().year
 # Bei jeder neuen Version erhöhen (auch in index.html), damit Browser keine alten Dateien aus dem Cache laden
-VERSION = "44"
+VERSION = "45"
 
 
 def parse_csv(text):
@@ -107,8 +107,17 @@ def hole_gj_liste(daten):
     return jahre
 
 
+def ist_zusatzangabe(zeile):
+    """Zeilen mit Kategorie "Zusatzangaben" gehören nicht zur GuV-Rechnung
+    (z. B. Tilgung, Entnahmen, Investitionen für die Kapitaldienstfähigkeit)."""
+    return "zusatz" in normalisiere_text(zeile.get("Kategorie", ""))
+
+
 def hole_guv_seite(zeile):
     """Liest haben/soll aus der GuV-Zeile, mit einfachem Fallback."""
+    if ist_zusatzangabe(zeile):
+        return ""
+
     seite = normalisiere_text(zeile.get("Seite", "") or "")
     if not seite:
         seite = normalisiere_text(zeile.get("seite", "") or "")
@@ -357,12 +366,28 @@ def sammle_guv_posten(guv_jahr):
         "abschreibungen": 0.0,
         "zinsaufwand": 0.0,
         "steuern": 0.0,
+        # Zusatzangaben: None = nicht angegeben
+        "tilgung": None,
+        "entnahmen": None,
+        "investitionen": None,
     }
 
     for zeile in guv_jahr:
         betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
         seite = hole_guv_seite(zeile)
         position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
+
+        if ist_zusatzangabe(zeile):
+            if "tilgung" in position:
+                schluessel = "tilgung"
+            elif "entnahme" in position or "ausschuettung" in position:
+                schluessel = "entnahmen"
+            elif "investition" in position:
+                schluessel = "investitionen"
+            else:
+                continue
+            p[schluessel] = (p[schluessel] or 0.0) + betrag
+            continue
 
         if seite == "haben":
             p["ertraege"] += betrag
@@ -481,6 +506,29 @@ def berechne_kennzahlen(b, g, vb=None, vg=None):
         setze("C04", teile(g["ebit"], g["zinsaufwand"]))
     else:
         setze("C04", None, "Kein Zinsaufwand")
+
+    # Kapitaldienstfähigkeit (braucht Zusatzangaben in der GuV-Datei)
+    zins = g["zinsaufwand"]
+    tilgung = g["tilgung"]
+    if g["entnahmen"] is None or g["investitionen"] is None:
+        kdg = None
+        setze("C05", None, "Zusatzangaben Entnahmen/Ausschüttungen und Investitionen fehlen")
+    else:
+        erweiterter_cashflow = cashflow + zins - g["entnahmen"]
+        kdg = erweiterter_cashflow - g["investitionen"]
+        setze("C05", kdg, cf_hinweis, "rot" if kdg <= 0 else "")
+
+    if kdg is None or tilgung is None:
+        setze("C06", None, "Zusatzangaben Tilgung, Entnahmen oder Investitionen fehlen")
+    elif kdg <= 0:
+        setze("C06", None, "Kapitaldienstgrenze ≤ 0", "rot")
+    else:
+        setze("C06", (zins + tilgung) / kdg, cf_hinweis)
+
+    if tilgung is None:
+        setze("C07", None, "Zusatzangabe Tilgung fehlt")
+    else:
+        setze("C07", teile(cashflow + zins, zins + tilgung), cf_hinweis)
 
     # Liquidität & Working Capital
     setze("L01", teile(b["liquide_mittel"], kfk))

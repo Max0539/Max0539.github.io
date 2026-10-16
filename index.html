@@ -1,9 +1,10 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=44">
+  <link rel="stylesheet" href="index.css?v=45">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -172,6 +173,12 @@
       font-weight: bold;
     }
 
+    button.download-button {
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
     .download-button:hover {
       background: #004080;
     }
@@ -192,10 +199,12 @@
       </div>
 
       <div class="download-box">
-        <p class="download-title">Beispieldateien herunterladen</p>
+        <p class="download-title">Beispieldateien (Geschäftsjahre 2024, 2025 und 2026)</p>
         <div class="download-links">
-          <a class="download-button" href="beispiel_bilanz.csv" download>Beispiel Bilanz CSV</a>
-          <a class="download-button" href="beispiel_guv.csv" download>Beispiel GuV CSV</a>
+          <button type="button" class="download-button" id="beispielLaden">▶ Beispieldaten direkt laden</button>
+          <button type="button" class="download-button" id="beispielHerunterladen">⬇ Bilanz + GuV herunterladen</button>
+          <a class="download-button" href="beispiel_bilanz.csv" download>Bilanz CSV</a>
+          <a class="download-button" href="beispiel_guv.csv" download>GuV CSV</a>
           <a class="download-button" href="Beispiel_Bilanz+GuV.zip" download>Bilanz + GuV als ZIP</a>
         </div>
       </div>
@@ -209,17 +218,18 @@
           <th>Betrag_EUR</th>
           <th>Seite</th>
           <th>GJ</th>
+          <th>Fristigkeit</th>
         </tr>
-        <tr><td>Grundstücke und Gebäude</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>450.000</td><td>Aktiva</td><td>2025</td></tr>
-        <tr><td>Maschinen</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>180.000</td><td>Aktiva</td><td>2025</td></tr>
-        <tr><td>Vorräte</td><td>Umlaufvermögen</td><td>Vorräte</td><td>120.000</td><td>Aktiva</td><td>2025</td></tr>
-        <tr><td>Forderungen aus LuL</td><td>Umlaufvermögen</td><td>Forderungen</td><td>95.000</td><td>Aktiva</td><td>2025</td></tr>
-        <tr><td>Bankguthaben</td><td>Umlaufvermögen</td><td>Liquide Mittel</td><td>175.000</td><td>Aktiva</td><td>2025</td></tr>
-        <tr><td>Gezeichnetes Kapital</td><td>Eigenkapital</td><td>Stammkapital</td><td>100.000</td><td>Passiva</td><td>2025</td></tr>
-        <tr><td>Jahresüberschuss</td><td>Eigenkapital</td><td>Jahresüberschuss</td><td>218.000</td><td>Passiva</td><td>2025</td></tr>
-        <tr><td>Sonstige Rückstellungen</td><td>Rückstellungen</td><td>Sonstige Rückstellungen</td><td>50.000</td><td>Passiva</td><td>2025</td></tr>
-        <tr><td>Bankdarlehen</td><td>Verbindlichkeiten</td><td>Bankdarlehen</td><td>300.000</td><td>Passiva</td><td>2025</td></tr>
-        <tr><td>Verbindl. aus LuL</td><td>Verbindlichkeiten</td><td>Lieferanten</td><td>95.000</td><td>Passiva</td><td>2025</td></tr>
+        <tr><td>Grundstücke und Gebäude</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>450.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
+        <tr><td>Maschinen</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>180.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
+        <tr><td>Vorräte</td><td>Umlaufvermögen</td><td>Vorräte</td><td>120.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
+        <tr><td>Forderungen aus LuL</td><td>Umlaufvermögen</td><td>Forderungen</td><td>95.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
+        <tr><td>Bankguthaben</td><td>Umlaufvermögen</td><td>Liquide Mittel</td><td>175.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
+        <tr><td>Gezeichnetes Kapital</td><td>Eigenkapital</td><td>Stammkapital</td><td>100.000</td><td>Passiva</td><td>2025</td><td></td></tr>
+        <tr><td>Jahresüberschuss</td><td>Eigenkapital</td><td>Jahresüberschuss</td><td>218.000</td><td>Passiva</td><td>2025</td><td></td></tr>
+        <tr><td>Sonstige Rückstellungen</td><td>Rückstellungen</td><td>Sonstige Rückstellungen</td><td>50.000</td><td>Passiva</td><td>2025</td><td>kurz</td></tr>
+        <tr><td>Bankdarlehen</td><td>Verbindlichkeiten</td><td>Bankdarlehen</td><td>300.000</td><td>Passiva</td><td>2025</td><td>lang</td></tr>
+        <tr><td>Verbindl. aus LuL</td><td>Verbindlichkeiten</td><td>Lieferanten</td><td>95.000</td><td>Passiva</td><td>2025</td><td>kurz</td></tr>
       </table>
 
       <h3>📈 Beispiel GuV</h3>
@@ -238,9 +248,16 @@
         <tr><td>Zinsaufwand</td><td>Aufwendungen</td><td>18.000</td><td>2025</td></tr>
         <tr><td>Steuern</td><td>Aufwendungen</td><td>62.000</td><td>2025</td></tr>
         <tr><td>Sonstige Aufwendungen</td><td>Aufwendungen</td><td>32.000</td><td>2025</td></tr>
+        <tr><td>Tilgung</td><td>Zusatzangaben</td><td>45.000</td><td>2025</td></tr>
+        <tr><td>Entnahmen und Ausschüttungen</td><td>Zusatzangaben</td><td>127.000</td><td>2025</td></tr>
+        <tr><td>Betriebsnotwendige Investitionen</td><td>Zusatzangaben</td><td>135.000</td><td>2025</td></tr>
       </table>
-<!-- ...existing code... -->
-      </table>
+      <div class="hinweis">
+        ℹ️ <b>Fristigkeit</b> (kurz/lang) ist optional und wird für langfristiges Fremdkapital verwendet.<br>
+        ℹ️ Zeilen mit Kategorie <b>Zusatzangaben</b> in der GuV (Tilgung, Entnahmen und Ausschüttungen,
+        betriebsnotwendige Investitionen) sind optional und werden für Kapitaldienstgrenze, Auslastung und DSCR gebraucht.
+        Sie zählen nicht zum Jahresergebnis.
+      </div>
     </div>
 
     <!-- RECHTS: Upload-Bereich -->
@@ -354,11 +371,44 @@
 
     setupDropzone("dropzone-bilanz", "csvBilanz", "status-bilanz", "data-bilanz");
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
+
+    // Beispieldaten direkt in die Upload-Felder laden (ohne Download)
+    document.getElementById("beispielLaden").addEventListener("click", async () => {
+      const dateien = [
+        ["beispiel_bilanz.csv", "data-bilanz", "status-bilanz"],
+        ["beispiel_guv.csv", "data-guv", "status-guv"]
+      ];
+      try {
+        for (const [datei, dataId, statusId] of dateien) {
+          const antwort = await fetch(datei + "?v=45");
+          if (!antwort.ok) throw new Error(datei + " nicht gefunden");
+          document.getElementById(dataId).textContent = await antwort.text();
+          document.getElementById(statusId).textContent = "✅ " + datei + " (Beispiel 2024–2026)";
+          logMessage("✅ Beispiel geladen: " + datei);
+        }
+      } catch (fehler) {
+        alert("Beispieldaten konnten nicht geladen werden: " + fehler.message);
+      }
+    });
+
+    // Beide Beispieldateien nacheinander herunterladen
+    document.getElementById("beispielHerunterladen").addEventListener("click", () => {
+      ["beispiel_bilanz.csv", "beispiel_guv.csv"].forEach((datei, i) => {
+        setTimeout(() => {
+          const link = document.createElement("a");
+          link.href = datei;
+          link.download = datei;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        }, i * 500);
+      });
+    });
   </script>
 
   <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
-  <script type="py" src="app.py?v=44"></script>
+  <script type="py" src="app.py?v=45"></script>
 
-  <div id="version">v44</div>
+  <div id="version">v45</div>
 </body>
 </html>
