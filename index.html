@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=49">
+  <link rel="stylesheet" href="index.css?v=50">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -287,7 +287,7 @@
       <div class="schritt">
         <h2 class="schritt-titel"><span class="schritt-nr">2</span> Branche wählen</h2>
         <select id="branche">
-          <option value="">-- Bitte wählen (optional) --</option>
+          <option value="">-- Bitte wählen --</option>
           <option value="tech">Tech</option>
           <option value="mittelstand">Mittelstand</option>
           <option value="industrie">Industrie</option>
@@ -446,7 +446,7 @@
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
 
     async function ladeBeispiel(datei, dataId, statusId) {
-      const antwort = await fetch(datei + "?v=49");
+      const antwort = await fetch(datei + "?v=50");
       if (!antwort.ok) {
         alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
         return;
@@ -479,8 +479,8 @@
     });
   </script>
 
-  <script type="py" src="app.py?v=49"></script>
+  <script type="py" src="app.py?v=50"></script>
 
-  <div id="version">v49</div>
+  <div id="version">v50</div>
 </body>
 </html>
