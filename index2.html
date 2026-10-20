@@ -4,11 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse – Ergebnis</title>
-  <link rel="stylesheet" href="index.css?v=48">
-  <!-- Chart.js zeichnet die Diagramme -->
+  <link rel="stylesheet" href="index.css?v=49">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
   <style>
-    /* ===== Grundlayout ===== */
     body {
       font-family: Arial, sans-serif;
       color: #e8eef6;
@@ -35,7 +33,6 @@
       margin: 0;
     }
 
-    /* Inhaltsverzeichnis oben */
     .inhalt {
       display: flex;
       flex-wrap: wrap;
@@ -58,7 +55,6 @@
       border-color: #4a90e2;
     }
 
-    /* Überschrift eines Abschnitts (1. Überblick, 2. Kennzahlen, ...) */
     .abschnitt {
       font-size: 22px;
       border-bottom: 2px solid #2b4157;
@@ -66,7 +62,6 @@
       margin: 36px 0 16px;
     }
 
-    /* Zwei Karten nebeneinander (auf dem Handy untereinander) */
     .raster-2 {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -105,7 +100,6 @@
       padding: 16px;
     }
 
-    /* ===== Kacheln im Überblick ===== */
     .kacheln {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -141,7 +135,6 @@
       font-size: 38px;
     }
 
-    /* ===== Tabellen ===== */
     .scroll {
       overflow-x: auto;
     }
@@ -212,7 +205,6 @@
     .schlechter { color: #f08a8a !important; }
     .negativ { color: #f08a8a; }
 
-    /* Kern / Wichtig / Ergänzend */
     .bedeutung {
       display: inline-block;
       margin-left: 8px;
@@ -228,7 +220,6 @@
       color: #ffffff;
     }
 
-    /* Ampelfarben */
     .ampel-gruen { background: #2e7d4f; }
     .ampel-gelb { background: #a88400; }
     .ampel-orange { background: #c2651a; }
@@ -256,7 +247,6 @@
       background: var(--farbe);
     }
 
-    /* ===== Kennzahlen je Säule (aufklappbar) ===== */
     .saeule-block {
       margin-bottom: 14px;
     }
@@ -278,7 +268,6 @@
       color: #ffffff;
     }
 
-    /* ===== Diagramme ===== */
     .diagramm {
       position: relative;
       height: 300px;
@@ -314,14 +303,11 @@
       <a href="index.html">← Neue Analyse</a>
     </nav>
 
-    <!-- Wird angezeigt, wenn keine (oder alte) Daten ankommen -->
     <div id="meldung"></div>
 
-    <!-- ================= 1. Überblick ================= -->
     <section id="ueberblick">
       <h2 class="abschnitt">1. Überblick</h2>
 
-      <!-- Gesamtscore und Score je Säule des neuesten Jahres -->
       <div class="kacheln" id="kacheln"></div>
 
       <div class="raster-2">
@@ -356,7 +342,6 @@
       </div>
     </section>
 
-    <!-- ================= 2. Kennzahlen ================= -->
     <section id="kennzahlen">
       <h2 class="abschnitt">2. Kennzahlen im Detail</h2>
       <div class="legende" id="legende"></div>
@@ -370,7 +355,6 @@
       </p>
     </section>
 
-    <!-- ================= 3. Diagramme ================= -->
     <section id="diagramme">
       <h2 class="abschnitt">3. Entwicklung über die Jahre</h2>
 
@@ -397,16 +381,7 @@
   </div>
 
   <script>
-    // ============================================================
-    // 1. Einstellungen
-    // ============================================================
 
-    // Liste aller Kennzahlen (aus Kennzahlen_Bonitaetspruefung.xlsx, Blatt „Kennzahlen“)
-    // id        = Kürzel, gleich wie in app.py (z. B. "K01")
-    // richtung  = "hoeher" (höher ist besser), "niedriger" (niedriger ist besser) oder "info" (keine Ampel)
-    // schwellen = [Grenze Grün, Grenze Gelb, Grenze Orange]; schlechter als Orange = Rot
-    // bedeutung = Wichtigkeit im Bankrating (Kern, Wichtig, Ergänzend)
-    // trend     = true -> Vergleich mit dem Vorjahr anzeigen
     const KENNZAHLEN_META = [
       {"id": "K01", "saeule": "Kapitalstruktur", "name": "Eigenkapitalquote", "formel": "Eigenkapital / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.3, 0.2, 0.1], "bedeutung": "Kern", "trend": true, "hinweis": "Zentrale Kennzahl im Bankrating. Stark branchenabhängig (Handel/Bau niedriger, Industrie höher). Bilanzsumme ggf. bereinigen (z. B. erhaltene Anzahlungen, Gesellschafterdarlehen)."},
       {"id": "K02", "saeule": "Kapitalstruktur", "name": "Fremdkapitalquote", "formel": "Fremdkapital / Bilanzsumme", "einheit": "%", "richtung": "niedriger", "schwellen": [0.7, 0.8, 0.9], "bedeutung": "Wichtig", "trend": false, "hinweis": "Gegenstück zur Eigenkapitalquote (zusammen 100 %)."},
@@ -440,10 +415,8 @@
       {"id": "L08", "saeule": "Liquidität & Working Capital", "name": "Cash Conversion Cycle", "formel": "Debitorenziel + Lagerdauer – Kreditorenziel", "einheit": "Tage", "richtung": "niedriger", "schwellen": [30, 60, 120], "bedeutung": "Ergänzend", "trend": true, "hinweis": "Dauer der Kapitalbindung im operativen Kreislauf."},
     ];
 
-    // Punkte, die eine Kennzahl je nach Ampelfarbe bekommt (Excel, Blatt „Rechner“)
     const PUNKTE_JE_AMPEL = { gruen: 100, gelb: 70, orange: 35, rot: 0 };
 
-    // Gewicht jeder Säule im Gesamtscore (zusammen 100 %)
     const SAEULEN_GEWICHTE = {
       "Kapitalstruktur": 0.25,
       "Rentabilität": 0.2,
@@ -451,12 +424,10 @@
       "Liquidität & Working Capital": 0.2
     };
 
-    // Ab wie vielen Punkten der Score grün, gelb oder orange ist (darunter rot)
     const SCORE_GRUEN = 75;
     const SCORE_GELB = 55;
     const SCORE_ORANGE = 35;
 
-    // Text und Farbe für jede Ampel
     const AMPEL_TEXT = {
       gruen: "Gut",
       gelb: "Akzeptabel",
@@ -475,7 +446,6 @@
       na: "#3a4a5a"
     };
 
-    // Namen der Branchen (Auswahl auf der Startseite)
     const BRANCHEN_NAMEN = {
       tech: "Tech",
       mittelstand: "Mittelstand",
@@ -484,7 +454,6 @@
       banken: "Banken"
     };
 
-    // Wachstumsbewertung: Gewicht von Wachstum (CAGR) und Stabilität je Branche
     const BRANCHEN_PROFIL = {
       tech: { cagrGewicht: 0.8, stabilGewicht: 0.2 },
       mittelstand: { cagrGewicht: 0.7, stabilGewicht: 0.3 },
@@ -494,7 +463,6 @@
       standard: { cagrGewicht: 0.7, stabilGewicht: 0.3 }
     };
 
-    // Wachstumsbewertung: ab welchem CAGR (in %) es 1, 2, ... 10 Punkte gibt
     const CAGR_GRENZEN = {
       tech: [2.5, 6.3, 7.2, 7.8, 8.7, 9.2, 10.4, 13.3, 14.6, 15.0],
       banken: [1.4, 4.9, 5.9, 6.6, 8.1, 8.7, 10.4, 12.0, 13.6, 14.0],
@@ -503,23 +471,15 @@
       standard: [-6.1, -3.1, 1.1, 3.5, 4.1, 4.7, 5.4, 6.3, 9.7, 10.0]
     };
 
-    // Farben für die Diagramme
     const FARBE_BLAU = "#4a90e2";
     const FARBE_GRUEN = "#5dbf8a";
     const FARBE_ORANGE = "#e2a04a";
     const FARBE_ROT = "#e25c4a";
 
-
-    // ============================================================
-    // 2. Hilfsfunktionen
-    // ============================================================
-
-    // Prüft, ob ein Wert eine richtige Zahl ist (nicht null, nicht leer)
     function istZahl(wert) {
       return typeof wert === "number" && isFinite(wert);
     }
 
-    // Schreibt eine Zahl auf Deutsch, z. B. zahlDe(1234.5, 1) -> "1.234,5"
     function zahlDe(zahl, nachkommastellen) {
       return zahl.toLocaleString("de-DE", {
         minimumFractionDigits: nachkommastellen,
@@ -527,7 +487,6 @@
       });
     }
 
-    // Euro-Betrag ohne Cent, z. B. 1290000 -> "1.290.000 €"
     function formatEuro(wert) {
       if (!istZahl(wert)) {
         return "–";
@@ -535,7 +494,6 @@
       return zahlDe(wert, 0) + " €";
     }
 
-    // Erstellt ein HTML-Element mit Text, z. B. neuesElement("td", "Hallo", "wert")
     function neuesElement(tag, text, klasse) {
       const element = document.createElement(tag);
       element.textContent = text;
@@ -545,12 +503,10 @@
       return element;
     }
 
-    // Erstellt eine Tabelle mit Kopfzeile. spalten = Liste mit Überschriften
     function neueTabelle(spalten) {
       const tabelle = neuesElement("table", "", "tabelle");
       const kopf = document.createElement("tr");
       for (let i = 0; i < spalten.length; i++) {
-        // Erste Spalte links, alle anderen rechtsbündig
         let klasse = "rechts";
         if (i === 0) {
           klasse = "name-spalte";
@@ -561,18 +517,11 @@
       return tabelle;
     }
 
-    // Pfeil und Text für eine Veränderung, z. B. pfeilText(6, "6 Pkt.") -> "▲ +6 Pkt."
     function pfeilText(differenz, text) {
       if (differenz > 0) return "▲ +" + text;
       if (differenz < 0) return "▼ −" + text;
       return "■ ±" + text;
     }
-
-
-    // ============================================================
-    // 3. Daten aus der Adresse (URL) lesen
-    // ============================================================
-    // app.py hängt die Ergebnisse als Text an die Adresse an: index2.html?results=...&branche=...
 
     const parameter = new URLSearchParams(window.location.search);
     const branche = (parameter.get("branche") || "").trim().toLowerCase();
@@ -584,22 +533,14 @@
       ergebnisse = [];
     }
 
-    // Jahre sortieren: ältestes zuerst
     ergebnisse.sort(function (a, b) {
       return Number(a.gj) - Number(b.gj);
     });
 
-    // Das neueste und das vorletzte Jahr (für Vergleiche)
     const neuestes = ergebnisse[ergebnisse.length - 1];
-    const vorletztes = ergebnisse[ergebnisse.length - 2];   // undefined, wenn es nur ein Jahr gibt
+    const vorletztes = ergebnisse[ergebnisse.length - 2];
     const mitVergleich = ergebnisse.length > 1;
 
-
-    // ============================================================
-    // 4. Bewertung: Ampel, Score und Vorjahresvergleich
-    // ============================================================
-
-    // Zeigt einen Kennzahl-Wert mit Einheit an, z. B. 0.253 -> "25,3 %"
     function formatKennzahl(meta, wert) {
       if (!istZahl(wert)) {
         return "–";
@@ -622,19 +563,16 @@
       return zahlDe(wert, 2);
     }
 
-    // Gibt die Ampelfarbe einer Kennzahl zurück: "gruen", "gelb", "orange", "rot", "info" oder "na"
     function bewerteKennzahl(meta, ergebnis) {
       if (!ergebnis) {
         return "na";
       }
-      // Sonderfall aus app.py, z. B. Eigenkapital ≤ 0 -> immer rot
       if (ergebnis.ampel) {
         return ergebnis.ampel;
       }
       if (!istZahl(ergebnis.wert)) {
         return "na";
       }
-      // Kennzahl ohne Schwellenwerte (z. B. Cashflow in Euro)
       if (!meta.schwellen || meta.richtung === "info") {
         return "info";
       }
@@ -645,13 +583,11 @@
       const kritisch = meta.schwellen[2];
 
       if (meta.richtung === "hoeher") {
-        // Höher ist besser
         if (wert >= gut) return "gruen";
         if (wert >= akzeptabel) return "gelb";
         if (wert >= kritisch) return "orange";
         return "rot";
       } else {
-        // Niedriger ist besser
         if (wert <= gut) return "gruen";
         if (wert <= akzeptabel) return "gelb";
         if (wert <= kritisch) return "orange";
@@ -659,7 +595,6 @@
       }
     }
 
-    // Text für die Spalte "Ziel (Grün)", z. B. "≥ 30,0 %"
     function zielText(meta) {
       if (!meta.schwellen || meta.richtung === "info") {
         return "–";
@@ -671,8 +606,6 @@
       return zeichen + " " + formatKennzahl(meta, meta.schwellen[0]);
     }
 
-    // Vergleicht eine Kennzahl mit dem Vorjahr.
-    // Gibt zurück: { text: "▲ +2,3 %-Pkt.", klasse: "besser" / "schlechter" / "" }
     function vergleichMitVorjahr(meta, aktuell, vorjahr) {
       if (!istZahl(aktuell) || !istZahl(vorjahr)) {
         return { text: "–", klasse: "" };
@@ -680,7 +613,6 @@
 
       let differenz = aktuell - vorjahr;
 
-      // Ganz kleine Unterschiede (die man nach dem Runden nicht sieht) zählen als 0
       let genauigkeit = 0;
       if (meta.einheit === "%") genauigkeit = 0.0005;
       if (meta.einheit === "Tage") genauigkeit = 0.5;
@@ -689,13 +621,11 @@
         differenz = 0;
       }
 
-      // Größe der Veränderung mit passender Einheit
       const betrag = Math.abs(differenz);
       let text = "";
       if (meta.einheit === "%") {
         text = zahlDe(betrag * 100, 1) + " %-Pkt.";
       } else if (meta.einheit === "€") {
-        // Bei Euro-Beträgen die Veränderung in Prozent zeigen
         if (vorjahr !== 0) {
           text = zahlDe(betrag / Math.abs(vorjahr) * 100, 1) + " %";
         } else {
@@ -709,10 +639,9 @@
         text = zahlDe(betrag, 1) + "x";
       }
 
-      // Ist die Veränderung gut oder schlecht?
       let klasse = "";
       if (differenz !== 0) {
-        let gestiegenIstGut = true;               // "höher" und Euro-Beträge (Cashflow)
+        let gestiegenIstGut = true;
         if (meta.richtung === "niedriger") {
           gestiegenIstGut = false;
         }
@@ -727,7 +656,6 @@
       return { text: pfeilText(differenz, text), klasse: klasse };
     }
 
-    // Score einer Säule = Durchschnitt der Punkte aller bewerteten Kennzahlen dieser Säule
     function berechneSaeulenScore(eintrag, saeule) {
       let summe = 0;
       let anzahl = 0;
@@ -737,7 +665,6 @@
           continue;
         }
         const ampel = bewerteKennzahl(meta, eintrag.kennzahlen[meta.id]);
-        // Nur Kennzahlen mit Ampelfarbe zählen ("info" und "na" bekommen keine Punkte)
         if (ampel in PUNKTE_JE_AMPEL) {
           summe = summe + PUNKTE_JE_AMPEL[ampel];
           anzahl = anzahl + 1;
@@ -750,7 +677,6 @@
       return summe / anzahl;
     }
 
-    // Gesamtscore = gewichteter Durchschnitt der Säulen
     function berechneGesamtScore(eintrag) {
       let summe = 0;
       let summeGewichte = 0;
@@ -758,7 +684,7 @@
       for (const saeule in SAEULEN_GEWICHTE) {
         const score = berechneSaeulenScore(eintrag, saeule);
         if (score === null) {
-          continue; // Säule ohne berechenbare Kennzahlen weglassen
+          continue;
         }
         summe = summe + score * SAEULEN_GEWICHTE[saeule];
         summeGewichte = summeGewichte + SAEULEN_GEWICHTE[saeule];
@@ -770,7 +696,6 @@
       return summe / summeGewichte;
     }
 
-    // Ampelfarbe für einen Score
     function scoreAmpel(score) {
       if (score === null) return "na";
       if (score >= SCORE_GRUEN) return "gruen";
@@ -779,12 +704,6 @@
       return "rot";
     }
 
-
-    // ============================================================
-    // 5. Abschnitt "Überblick"
-    // ============================================================
-
-    // Untertitel, z. B. "Geschäftsjahre 2024–2026 · Branche: Industrie"
     function zeigeUntertitel() {
       let text = "Geschäftsjahr " + neuestes.gj;
       if (mitVergleich) {
@@ -796,7 +715,6 @@
       document.getElementById("untertitel").textContent = text;
     }
 
-    // Eine Kachel mit großem Score, z. B. "Gesamtscore 94"
     function neueKachel(titel, score, scoreVorjahr, gesamt) {
       const ampel = scoreAmpel(score);
       const kachel = neuesElement("div", "", "kachel");
@@ -813,7 +731,6 @@
       }
       kachel.appendChild(neuesElement("div", wertText, "kachel-wert"));
 
-      // Text darunter: Ampel und Veränderung zum Vorjahr
       let text = AMPEL_TEXT[ampel];
       const unterzeile = neuesElement("div", "", "kachel-text");
       if (score !== null && istZahl(scoreVorjahr)) {
@@ -845,7 +762,6 @@
       }
     }
 
-    // Eine Zeile der Score-Tabelle: Name, ein Feld pro Jahr, Veränderung zum Vorjahr
     function scoreZeile(name, scores) {
       const zeile = document.createElement("tr");
       zeile.appendChild(neuesElement("td", name));
@@ -886,7 +802,6 @@
       }
       const tabelle = neueTabelle(spalten);
 
-      // Eine Zeile pro Säule
       for (const saeule in SAEULEN_GEWICHTE) {
         const scores = [];
         for (const eintrag of ergebnisse) {
@@ -896,7 +811,6 @@
         tabelle.appendChild(scoreZeile(name, scores));
       }
 
-      // Zeile für den Gesamtscore
       const gesamtScores = [];
       for (const eintrag of ergebnisse) {
         gesamtScores.push(berechneGesamtScore(eintrag));
@@ -908,7 +822,6 @@
       document.getElementById("score-tabelle").appendChild(tabelle);
     }
 
-    // Tabelle mit den wichtigsten Euro-Beträgen pro Jahr
     function zeigeFinanzuebersicht() {
       const zeilen = [
         ["Umsatzerlöse", "umsatz"],
@@ -945,7 +858,6 @@
           zeile.appendChild(feld);
         }
 
-        // Veränderung in Prozent zum Vorjahr
         if (mitVergleich) {
           const aktuell = neuestes.werte[schluessel];
           const vorjahr = vorletztes.werte[schluessel];
@@ -962,7 +874,6 @@
       document.getElementById("finanzuebersicht").appendChild(tabelle);
     }
 
-    // Standardabweichung: wie stark schwanken die Werte um ihren Durchschnitt?
     function standardabweichung(werte) {
       if (werte.length === 0) {
         return 0;
@@ -980,27 +891,23 @@
       return Math.sqrt(summeQuadrate / werte.length);
     }
 
-    // 0–10 Punkte für das durchschnittliche Wachstum (CAGR in %), je nach Branche
     function cagrPunkte(cagrProzent) {
       let grenzen = CAGR_GRENZEN[branche];
       if (!grenzen) {
         grenzen = CAGR_GRENZEN.standard;
       }
-      // Für jede erreichte Grenze einen Punkt mehr (die Grenzen sind aufsteigend sortiert)
       let punkte = 0;
       for (let i = 0; i < 9; i++) {
         if (cagrProzent >= grenzen[i]) {
           punkte = i + 1;
         }
       }
-      // 10 Punkte nur, wenn die letzte Grenze überschritten ist
       if (cagrProzent > grenzen[9]) {
         punkte = 10;
       }
       return punkte;
     }
 
-    // 0–10 Punkte für die Stabilität: je weniger das Wachstum schwankt, desto besser
     function stabilitaetPunkte(schwankung) {
       if (schwankung < 1.5) return 10;
       if (schwankung < 3) return 8;
@@ -1018,7 +925,6 @@
         return;
       }
 
-      // Wachstum von Jahr zu Jahr in %
       const wachstum = [];
       for (let i = 1; i < ergebnisse.length; i++) {
         const vorher = ergebnisse[i - 1].werte.umsatz;
@@ -1028,8 +934,6 @@
         }
       }
 
-      // CAGR = durchschnittliches Wachstum pro Jahr
-      // Bei 3 Jahren (2024 -> 2026) gibt es 2 Wachstumsschritte, deshalb "Anzahl Jahre - 1"
       const startUmsatz = ergebnisse[0].werte.umsatz;
       const endUmsatz = neuestes.werte.umsatz;
       const anzahlSchritte = ergebnisse.length - 1;
@@ -1052,7 +956,6 @@
       const punkteStabilitaet = stabilitaetPunkte(schwankung);
       const punkteGesamt = punkteWachstum * profil.cagrGewicht + punkteStabilitaet * profil.stabilGewicht;
 
-      // Als kleine Tabelle anzeigen
       const tabelle = neueTabelle(["Kennzahl", "Wert", "Punkte"]);
       const zeilen = [
         ["Ø Umsatzwachstum pro Jahr (CAGR)", cagrProzent === null ? "–" : zahlDe(cagrProzent, 1) + " %", punkteWachstum + " / 10"],
@@ -1083,11 +986,6 @@
         "hinweis"));
     }
 
-
-    // ============================================================
-    // 6. Abschnitt "Kennzahlen im Detail"
-    // ============================================================
-
     function zeigeLegende() {
       const legende = document.getElementById("legende");
       for (const ampel in AMPEL_FARBE) {
@@ -1097,18 +995,15 @@
       }
     }
 
-    // Eine Tabellenzeile für eine Kennzahl
     function kennzahlZeile(meta) {
       const zeile = document.createElement("tr");
 
-      // 1. Spalte: Name, Bedeutung (Kern/Wichtig/Ergänzend) und Formel
       const nameFeld = neuesElement("td", meta.id + " " + meta.name);
       nameFeld.title = meta.hinweis;
       nameFeld.appendChild(neuesElement("span", meta.bedeutung, "bedeutung bedeutung-" + meta.bedeutung.toLowerCase()));
       nameFeld.appendChild(neuesElement("span", meta.formel, "formel"));
       zeile.appendChild(nameFeld);
 
-      // Ein Feld pro Jahr, eingefärbt nach Ampel
       for (const eintrag of ergebnisse) {
         const ergebnis = eintrag.kennzahlen[meta.id];
         const ampel = bewerteKennzahl(meta, ergebnis);
@@ -1127,7 +1022,6 @@
         zeile.appendChild(feld);
       }
 
-      // Vergleich mit dem Vorjahr (nur bei Kennzahlen mit trend: true)
       if (mitVergleich) {
         const feld = neuesElement("td", "", "vergleich");
         const jetzt = neuestes.kennzahlen[meta.id];
@@ -1142,21 +1036,17 @@
         zeile.appendChild(feld);
       }
 
-      // Letzte Spalte: Zielwert
       zeile.appendChild(neuesElement("td", zielText(meta), "ziel"));
       return zeile;
     }
 
-    // Für jede Säule ein aufklappbarer Block mit eigener Tabelle
     function zeigeKennzahlen() {
       const liste = document.getElementById("kennzahlen-liste");
 
       for (const saeule in SAEULEN_GEWICHTE) {
-        // <details open> = Bereich, der offen ist und zugeklappt werden kann
         const block = neuesElement("details", "", "saeule-block");
         block.open = true;
 
-        // Überschrift mit Score des neuesten Jahres
         const ueberschrift = neuesElement("summary", saeule);
         const score = berechneSaeulenScore(neuestes, saeule);
         let punkteText = "–";
@@ -1168,7 +1058,6 @@
         ueberschrift.appendChild(punkte);
         block.appendChild(ueberschrift);
 
-        // Tabelle
         const spalten = ["Kennzahl"];
         for (const eintrag of ergebnisse) {
           spalten.push("GJ " + eintrag.gj);
@@ -1192,19 +1081,12 @@
       }
     }
 
-
-    // ============================================================
-    // 7. Diagramme (mit Chart.js)
-    // ============================================================
-
-    // Einstellungen, die für alle Diagramme gelten (helle Schrift auf dunklem Hintergrund)
     function diagrammGrundeinstellungen() {
       Chart.defaults.color = "#c8ddf5";
       Chart.defaults.borderColor = "rgba(200, 221, 245, 0.12)";
       Chart.defaults.maintainAspectRatio = false;
     }
 
-    // Liste mit allen Jahren, z. B. ["2024", "2025", "2026"]
     function jahresListe() {
       const jahre = [];
       for (const eintrag of ergebnisse) {
@@ -1213,7 +1095,6 @@
       return jahre;
     }
 
-    // Liste mit einem Wert pro Jahr, z. B. werteListe("eigenkapital")
     function werteListe(schluessel) {
       const liste = [];
       for (const eintrag of ergebnisse) {
@@ -1222,7 +1103,6 @@
       return liste;
     }
 
-    // Statt eines Diagramms einen Hinweis anzeigen (z. B. wenn Daten fehlen)
     function zeigeDiagrammHinweis(bereichId, text) {
       const bereich = document.getElementById(bereichId);
       bereich.textContent = text;
@@ -1230,12 +1110,10 @@
       bereich.className = "hinweis";
     }
 
-    // Tooltip, der Beträge als Euro anzeigt
     function euroTooltip(kontext) {
       return kontext.dataset.label + ": " + formatEuro(kontext.parsed.y);
     }
 
-    // Diagramm 1: Score je Säule (ein Balken pro Jahr)
     function zeichneScoreDiagramm() {
       const saeulen = Object.keys(SAEULEN_GEWICHTE);
       const blautoene = ["#2b5d8f", "#3a78b8", "#4a90e2", "#7db9f0", "#a8d1f7"];
@@ -1247,7 +1125,6 @@
         for (const saeule of saeulen) {
           scores.push(berechneSaeulenScore(eintrag, saeule));
         }
-        // Neuestes Jahr am hellsten
         const farbe = blautoene[blautoene.length - ergebnisse.length + i] || FARBE_BLAU;
         datensaetze.push({ label: "GJ " + eintrag.gj, data: scores, backgroundColor: farbe });
       }
@@ -1263,7 +1140,6 @@
       });
     }
 
-    // Diagramm 2: Kapitalstruktur (gestapelte Balken: Eigenkapital + langfr. + kurzfr. Fremdkapital)
     function zeichneKapitalstruktur() {
       new Chart(document.getElementById("diagramm-kapitalstruktur"), {
         type: "bar",
@@ -1285,12 +1161,10 @@
       });
     }
 
-    // Diagramm 3: Kapitaldienstgrenze (was man zahlen könnte) gegen Kapitaldienst (was man zahlen muss)
     function zeichneKapitaldienst() {
       const grenze = werteListe("kapitaldienstgrenze");
       const kapitaldienst = werteListe("kapitaldienst");
 
-      // Ohne Zusatzangaben gibt es keine Daten -> Hinweis statt Diagramm
       let hatDaten = false;
       for (let i = 0; i < grenze.length; i++) {
         if (istZahl(grenze[i]) && istZahl(kapitaldienst[i])) {
@@ -1319,15 +1193,12 @@
       });
     }
 
-    // Diagramm 4: Umsatzwachstum in % (Linie links) und Eigenkapital in € (Linie rechts)
     function zeichneUmsatzUndEigenkapital() {
-      // Wachstum braucht mindestens 2 Jahre
       if (!mitVergleich) {
         zeigeDiagrammHinweis("umsatz-bereich", "Für dieses Diagramm werden mindestens 2 Geschäftsjahre gebraucht.");
         return;
       }
 
-      // Umsatzwachstum: für das erste Jahr gibt es keinen Vergleich (null)
       const wachstum = [null];
       for (let i = 1; i < ergebnisse.length; i++) {
         const vorher = ergebnisse[i - 1].werte.umsatz;
@@ -1401,15 +1272,9 @@
       });
     }
 
-
-    // ============================================================
-    // 8. Seite aufbauen
-    // ============================================================
-
     function zeigeMeldung(text) {
       const meldung = neuesElement("div", text, "meldung");
       document.getElementById("meldung").appendChild(meldung);
-      // Abschnitte ausblenden, weil es nichts anzuzeigen gibt
       document.getElementById("ueberblick").style.display = "none";
       document.getElementById("kennzahlen").style.display = "none";
       document.getElementById("diagramme").style.display = "none";
@@ -1418,22 +1283,18 @@
     if (ergebnisse.length === 0) {
       zeigeMeldung("Keine Daten gefunden. Bitte auf der Startseite Bilanz und GuV hochladen und die Analyse starten.");
     } else if (!neuestes.werte || !neuestes.kennzahlen) {
-      // Ergebnis kommt von einer alten app.py aus dem Browser-Cache
       zeigeMeldung("Der Browser hat eine alte Version der Analyse geladen. " +
         "Bitte die Startseite mit Strg+F5 neu laden und die Analyse erneut starten.");
     } else {
-      // 1. Überblick
       zeigeUntertitel();
       zeigeKacheln();
       zeigeScoreTabelle();
       zeigeFinanzuebersicht();
       zeigeWachstum();
 
-      // 2. Kennzahlen
       zeigeLegende();
       zeigeKennzahlen();
 
-      // 3. Diagramme (nur wenn Chart.js geladen werden konnte)
       if (typeof Chart === "undefined") {
         document.getElementById("diagramme").appendChild(
           neuesElement("p", "Die Diagramme konnten nicht geladen werden (keine Internetverbindung?).", "meldung"));
