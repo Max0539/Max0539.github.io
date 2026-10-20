@@ -1,66 +1,251 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse – Ergebnis</title>
-  <link rel="stylesheet" href="index.css?v=46">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <link rel="stylesheet" href="index.css?v=47">
+  <!-- Chart.js zeichnet die Diagramme -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
   <style>
-    #charts-container {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 24px;
-      align-items: start;
+    /* ===== Grundlayout ===== */
+    body {
+      font-family: Arial, sans-serif;
+      color: #e8eef6;
+      margin: 0;
     }
 
-    .result-card {
+    .seite {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    .kopf {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .kopf h1 {
+      margin: 0 0 6px;
+    }
+
+    .untertitel {
+      color: #8aaac8;
+      margin: 0;
+    }
+
+    /* Inhaltsverzeichnis oben */
+    .inhalt {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 18px 0 28px;
+    }
+
+    .inhalt a {
+      color: #c8ddf5;
+      background: #162433;
+      border: 1px solid #2b4157;
+      border-radius: 20px;
+      padding: 6px 14px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .inhalt a:hover {
+      border-color: #4a90e2;
+    }
+
+    /* Überschrift eines Abschnitts (1. Überblick, 2. Kennzahlen, ...) */
+    .abschnitt {
+      font-size: 22px;
+      border-bottom: 2px solid #2b4157;
+      padding-bottom: 6px;
+      margin: 36px 0 16px;
+    }
+
+    /* Zwei Karten nebeneinander (auf dem Handy untereinander) */
+    .raster-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .karte {
       background: #162433;
       border: 1px solid #2b4157;
       border-radius: 10px;
       padding: 16px;
     }
 
-    .report-card {
-      margin-bottom: 22px;
+    .karte h3 {
+      margin: 0 0 4px;
+      font-size: 17px;
     }
 
-    .report-grid {
+    .karte .frage {
+      margin: 0 0 12px;
+      color: #8aaac8;
+      font-size: 13px;
+    }
+
+    .hinweis {
+      font-size: 12px;
+      color: #8aaac8;
+      margin: 12px 0 0;
+    }
+
+    .meldung {
+      background: #3a2a1a;
+      border: 1px solid #c2651a;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    /* ===== Kacheln im Überblick ===== */
+    .kacheln {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px 24px;
-      margin-top: 10px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
     }
 
-    .report-line {
-      margin: 0;
-      font-size: 16px;
-      line-height: 1.35;
+    .kachel {
+      background: #162433;
+      border: 1px solid #2b4157;
+      border-left: 6px solid var(--farbe);
+      border-radius: 10px;
+      padding: 12px 14px;
     }
 
-    .trend-card {
-      margin-top: 24px;
-    }
-
-    .trend-chart-wrap {
-      position: relative;
-      height: 420px;
-    }
-
-    .kennzahlen-card {
-      margin-top: 24px;
-    }
-
-    .kennzahlen-legende {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      margin: 0 0 14px 0;
+    .kachel-titel {
       font-size: 13px;
       color: #b0c4de;
     }
 
-    .kennzahlen-legende span::before {
+    .kachel-wert {
+      font-size: 30px;
+      font-weight: bold;
+      margin: 4px 0;
+    }
+
+    .kachel-text {
+      font-size: 13px;
+      color: #b0c4de;
+    }
+
+    .kachel.gesamt .kachel-wert {
+      font-size: 38px;
+    }
+
+    /* ===== Tabellen ===== */
+    .scroll {
+      overflow-x: auto;
+    }
+
+    .tabelle {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1f2f40;
+      border: 1px solid #36516b;
+      font-size: 14px;
+    }
+
+    .tabelle th,
+    .tabelle td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #2b4157;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .tabelle th {
+      color: #c8ddf5;
+    }
+
+    .tabelle .rechts {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tabelle td.wert {
+      text-align: right;
+      white-space: nowrap;
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    .tabelle tr.gesamt td {
+      font-weight: bold;
+      font-size: 15px;
+      border-top: 2px solid #4a90e2;
+    }
+
+    .tabelle .name-spalte {
+      width: 42%;
+    }
+
+    .tabelle .formel {
+      display: block;
+      font-size: 12px;
+      color: #8aaac8;
+      margin-top: 2px;
+    }
+
+    .tabelle .ziel {
+      font-size: 12px;
+      color: #b0c4de;
+      white-space: nowrap;
+    }
+
+    .tabelle td.vergleich {
+      text-align: right;
+      white-space: nowrap;
+      font-size: 13px;
+      color: #b0c4de;
+    }
+
+    .besser { color: #6fd39a !important; }
+    .schlechter { color: #f08a8a !important; }
+    .negativ { color: #f08a8a; }
+
+    /* Kern / Wichtig / Ergänzend */
+    .bedeutung {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      background: #2f4a66;
+      color: #c8ddf5;
+    }
+
+    .bedeutung-kern {
+      background: #005fb8;
+      color: #ffffff;
+    }
+
+    /* Ampelfarben */
+    .ampel-gruen { background: #2e7d4f; }
+    .ampel-gelb { background: #a88400; }
+    .ampel-orange { background: #c2651a; }
+    .ampel-rot { background: #a83838; }
+    .ampel-info { background: #2f4a66; }
+    .ampel-na { background: #3a4a5a; color: #b0c4de !important; font-weight: normal !important; }
+
+    .legende {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #b0c4de;
+    }
+
+    .legende span::before {
       content: "";
       display: inline-block;
       width: 12px;
@@ -71,156 +256,156 @@
       background: var(--farbe);
     }
 
-    .kennzahlen-scroll {
-      overflow-x: auto;
+    /* ===== Kennzahlen je Säule (aufklappbar) ===== */
+    .saeule-block {
+      margin-bottom: 14px;
     }
 
-    .kennzahlen-tabelle {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1f2f40;
-      border: 1px solid #36516b;
-      font-size: 14px;
-    }
-
-    .kennzahlen-tabelle th,
-    .kennzahlen-tabelle td {
-      padding: 8px 10px;
-      border-bottom: 1px solid #2b4157;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    .kennzahlen-tabelle td.wert {
-      text-align: right;
-      white-space: nowrap;
+    .saeule-block summary {
+      cursor: pointer;
+      font-size: 17px;
       font-weight: bold;
+      color: #c8ddf5;
+      padding: 8px 0;
+    }
+
+    .saeule-block .punkte {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 13px;
       color: #ffffff;
     }
 
-    .kennzahlen-tabelle tr.saeule th {
-      background: #24384d;
-      color: #c8ddf5;
-      font-size: 15px;
+    /* ===== Diagramme ===== */
+    .diagramm {
+      position: relative;
+      height: 300px;
     }
 
-    .kennzahlen-tabelle .formel {
-      display: block;
-      font-size: 12px;
-      color: #8aaac8;
-      margin-top: 2px;
-    }
-
-    .kennzahlen-tabelle .ziel {
-      font-size: 12px;
-      color: #b0c4de;
-      white-space: nowrap;
-    }
-
-    .kennzahlen-tabelle th.rechts { text-align: right; }
-
-    .kennzahlen-tabelle td.vergleich {
-      text-align: right;
-      white-space: nowrap;
-      font-size: 13px;
-      color: #b0c4de;
-    }
-
-    .kennzahlen-tabelle td.vergleich.besser { color: #6fd39a; }
-    .kennzahlen-tabelle td.vergleich.schlechter { color: #f08a8a; }
-
-    .kennzahlen-tabelle tr.gesamt td {
-      font-weight: bold;
-      font-size: 15px;
-      border-top: 2px solid #4a90e2;
-    }
-
-    .kennzahlen-tabelle .bedeutung {
-      display: inline-block;
-      margin-left: 8px;
-      padding: 1px 6px;
-      border-radius: 8px;
-      font-size: 11px;
-      background: #2f4a66;
-      color: #c8ddf5;
-    }
-
-    .kennzahlen-tabelle .bedeutung-kern { background: #005fb8; color: #ffffff; }
-
-    .score-card {
-      margin-bottom: 22px;
-    }
-
-    .kennzahlen-card details summary {
-      cursor: pointer;
-      color: #c8ddf5;
-      margin-bottom: 10px;
-    }
-
-    .ampel-gruen { background: #2e7d4f; }
-    .ampel-gelb { background: #a88400; }
-    .ampel-orange { background: #c2651a; }
-    .ampel-rot { background: #a83838; }
-    .ampel-info { background: #2f4a66; }
-    .ampel-na { background: #3a4a5a; color: #b0c4de !important; font-weight: normal !important; }
-
-    @media (max-width: 980px) {
-      #charts-container {
-        grid-template-columns: 1fr;
+    @media (max-width: 900px) {
+      .raster-2 {
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      .report-grid {
-        grid-template-columns: 1fr;
+      .kacheln {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .trend-chart-wrap {
-        height: 320px;
+      .kachel.gesamt {
+        grid-column: 1 / -1;
       }
     }
   </style>
 </head>
 <body>
-  <h1 style="text-align:center; font-family:Arial,sans-serif; color:#e8eef6;">Analyseergebnis</h1>
+  <div class="seite">
 
-  <div style="font-family:Arial,sans-serif; color:#e8eef6; max-width:1300px; margin:30px auto; padding:0 12px;">
-    <div id="charts-container"></div>
+    <div class="kopf">
+      <h1>Analyseergebnis</h1>
+      <p class="untertitel" id="untertitel"></p>
+    </div>
+
+    <nav class="inhalt">
+      <a href="#ueberblick">1. Überblick</a>
+      <a href="#kennzahlen">2. Kennzahlen im Detail</a>
+      <a href="#diagramme">3. Entwicklung</a>
+      <a href="index.html">← Neue Analyse</a>
+    </nav>
+
+    <!-- Wird angezeigt, wenn keine (oder alte) Daten ankommen -->
+    <div id="meldung"></div>
+
+    <!-- ================= 1. Überblick ================= -->
+    <section id="ueberblick">
+      <h2 class="abschnitt">1. Überblick</h2>
+
+      <!-- Gesamtscore und Score je Säule des neuesten Jahres -->
+      <div class="kacheln" id="kacheln"></div>
+
+      <div class="raster-2">
+        <div class="karte">
+          <h3>Pre-Rating Score (0–100)</h3>
+          <p class="frage">Wie gut schneidet das Unternehmen je Säule ab?</p>
+          <div class="scroll" id="score-tabelle"></div>
+          <p class="hinweis">
+            Punkte je Kennzahl: Grün 100, Gelb 70, Orange 35, Rot 0. Säulen-Score = Durchschnitt,
+            Gesamt = gewichteter Durchschnitt. Ampel: Grün ab 75, Gelb ab 55, Orange ab 35, darunter Rot.
+            Das ist ein Pre-Rating aus Bilanz und GuV und ersetzt kein Bankrating.
+          </p>
+        </div>
+        <div class="karte">
+          <h3>Score je Säule</h3>
+          <p class="frage">Wo liegen Stärken und Schwächen – und wie haben sie sich entwickelt?</p>
+          <div class="diagramm"><canvas id="diagramm-score"></canvas></div>
+        </div>
+      </div>
+
+      <div class="raster-2">
+        <div class="karte">
+          <h3>Finanzübersicht</h3>
+          <p class="frage">Die wichtigsten Beträge auf einen Blick</p>
+          <div class="scroll" id="finanzuebersicht"></div>
+        </div>
+        <div class="karte">
+          <h3>Wachstum</h3>
+          <p class="frage">Wie stark und wie gleichmäßig wächst der Umsatz?</p>
+          <div id="wachstum"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2. Kennzahlen ================= -->
+    <section id="kennzahlen">
+      <h2 class="abschnitt">2. Kennzahlen im Detail</h2>
+      <div class="legende" id="legende"></div>
+      <div id="kennzahlen-liste"></div>
+      <p class="hinweis">
+        Schwellenwerte sind Orientierungswerte (Faustwerte), keine Bankvorgaben, und sollten je Branche angepasst werden.
+        Langfristiges Fremdkapital laut Spalte „Fristigkeit“ (kurz/lang); ohne diese Spalte gelten Darlehen,
+        Bankverbindlichkeiten und Pensionsrückstellungen als langfristig.
+        C05–C07 brauchen die Zusatzangaben Tilgung, Entnahmen/Ausschüttungen und Investitionen in der GuV-Datei.
+        Mit der Maus über einen Wert fahren für Details.
+      </p>
+    </section>
+
+    <!-- ================= 3. Diagramme ================= -->
+    <section id="diagramme">
+      <h2 class="abschnitt">3. Entwicklung über die Jahre</h2>
+
+      <div class="raster-2">
+        <div class="karte">
+          <h3>Kapitalstruktur</h3>
+          <p class="frage">Womit ist das Unternehmen finanziert?</p>
+          <div class="diagramm"><canvas id="diagramm-kapitalstruktur"></canvas></div>
+        </div>
+        <div class="karte">
+          <h3>Kapitaldienstfähigkeit</h3>
+          <p class="frage">Reicht das Geld aus dem Geschäft für Zinsen und Tilgung?</p>
+          <div class="diagramm" id="kapitaldienst-bereich"><canvas id="diagramm-kapitaldienst"></canvas></div>
+        </div>
+      </div>
+
+      <div class="karte">
+        <h3>Umsatzwachstum und Eigenkapital</h3>
+        <p class="frage">Wächst das Unternehmen und baut es dabei Eigenkapital auf?</p>
+        <div class="diagramm" id="umsatz-bereich"><canvas id="diagramm-umsatz"></canvas></div>
+      </div>
+    </section>
+
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    let ergebnisse = [];
-    const branche = (params.get("branche") || "").trim().toLowerCase();
-
-    const BRANCHEN_PROFIL = {
-      tech: { cagrGewicht: 0.8, stabilGewicht: 0.2 },
-      mittelstand: { cagrGewicht: 0.7, stabilGewicht: 0.3 },
-      industrie: { cagrGewicht: 0.65, stabilGewicht: 0.35 },
-      immobilien: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
-      banken: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
-      default: { cagrGewicht: 0.7, stabilGewicht: 0.3 }
-    };
-
-    function formatEuro(zahl) {
-      const wert = Number(zahl || 0);
-      return new Intl.NumberFormat("de-DE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(wert) + " EUR";
-    }
-
-    function formatWert(name, wert) {
-      if (name === "Jahresüberschuss" && typeof wert === "string") {
-        return wert;
-      }
-      return formatEuro(wert);
-    }
-
     // ============================================================
+    // 1. Einstellungen
+    // ============================================================
+
     // Liste aller Kennzahlen (aus Kennzahlen_Bonitaetspruefung.xlsx, Blatt „Kennzahlen“)
-    // ============================================================
     // id        = Kürzel, gleich wie in app.py (z. B. "K01")
     // richtung  = "hoeher" (höher ist besser), "niedriger" (niedriger ist besser) oder "info" (keine Ampel)
     // schwellen = [Grenze Grün, Grenze Gelb, Grenze Orange]; schlechter als Orange = Rot
+    // bedeutung = Wichtigkeit im Bankrating (Kern, Wichtig, Ergänzend)
     // trend     = true -> Vergleich mit dem Vorjahr anzeigen
     const KENNZAHLEN_META = [
       {"id": "K01", "saeule": "Kapitalstruktur", "name": "Eigenkapitalquote", "formel": "Eigenkapital / Bilanzsumme", "einheit": "%", "richtung": "hoeher", "schwellen": [0.3, 0.2, 0.1], "bedeutung": "Kern", "trend": true, "hinweis": "Zentrale Kennzahl im Bankrating. Stark branchenabhängig (Handel/Bau niedriger, Industrie höher). Bilanzsumme ggf. bereinigen (z. B. erhaltene Anzahlungen, Gesellschafterdarlehen)."},
@@ -255,35 +440,7 @@
       {"id": "L08", "saeule": "Liquidität & Working Capital", "name": "Cash Conversion Cycle", "formel": "Debitorenziel + Lagerdauer – Kreditorenziel", "einheit": "Tage", "richtung": "niedriger", "schwellen": [30, 60, 120], "bedeutung": "Ergänzend", "trend": true, "hinweis": "Dauer der Kapitalbindung im operativen Kreislauf."},
     ];
 
-    // Aus Kennzahlen_Bonitaetspruefung.xlsx (Blatt „Weiche Faktoren“)
-    const WEICHE_FAKTOREN = [
-      {"bereich": "Kontoführung", "kriterium": "Überziehungen", "frage": "Wird das Konto im vereinbarten Rahmen geführt?", "positiv": "Keine ungenehmigten Überziehungen, Limit eingehalten", "negativ": "Wiederholte oder dauerhafte ungenehmigte Überziehungen", "einfluss": "Hoch"},
-      {"bereich": "Kontoführung", "kriterium": "Rücklastschriften, Pfändungen", "frage": "Gibt es Rücklastschriften, Mahnungen oder Pfändungen?", "positiv": "Keine", "negativ": "Häufige Rücklastschriften oder Pfändungen", "einfluss": "Hoch"},
-      {"bereich": "Kontoführung", "kriterium": "Entwicklung der Kontoumsätze", "frage": "Passen Zahlungseingänge zu den gemeldeten Umsätzen?", "positiv": "Stabile oder wachsende Eingänge, passend zur BWA", "negativ": "Rückläufige Eingänge, Abweichung zu BWA/Steuerdaten", "einfluss": "Mittel"},
-      {"bereich": "Kontoführung", "kriterium": "Auslastung des Kontokorrents", "frage": "Wie stark wird die Kreditlinie dauerhaft genutzt?", "positiv": "Linie wird schwankend und mit Spielraum genutzt", "negativ": "Linie dauerhaft ausgeschöpft", "einfluss": "Mittel"},
-      {"bereich": "Branche / Markt", "kriterium": "Branchenrisiko", "frage": "Gilt die Branche bei Banken als Risikobranche?", "positiv": "Stabile, wachsende oder krisenfeste Branche", "negativ": "Zyklische oder strukturell schrumpfende Branche", "einfluss": "Hoch"},
-      {"bereich": "Branche / Markt", "kriterium": "Marktposition und Wettbewerb", "frage": "Wie stark ist die Wettbewerbsposition?", "positiv": "Klare Positionierung, Alleinstellungsmerkmale", "negativ": "Austauschbares Angebot, Preisdruck", "einfluss": "Mittel"},
-      {"bereich": "Geschäftsmodell", "kriterium": "Kundenabhängigkeit", "frage": "Wie hoch ist der Umsatzanteil der größten Kunden?", "positiv": "Breite Kundenbasis, kein Kunde dominiert", "negativ": "Ein Großkunde macht einen sehr hohen Umsatzanteil aus", "einfluss": "Hoch"},
-      {"bereich": "Geschäftsmodell", "kriterium": "Lieferantenabhängigkeit", "frage": "Gibt es Klumpenrisiken auf Lieferantenseite?", "positiv": "Mehrere Bezugsquellen", "negativ": "Einzelner Lieferant, schwer ersetzbar", "einfluss": "Mittel"},
-      {"bereich": "Geschäftsmodell", "kriterium": "Vertrieb und Marketing", "frage": "Ist die Vertriebsstrategie nachvollziehbar?", "positiv": "Klare Strategie, planbarer Auftragsbestand", "negativ": "Unklare Pipeline, Zufallsumsätze", "einfluss": "Mittel"},
-      {"bereich": "Management", "kriterium": "Qualifikation und Erfahrung", "frage": "Verfügt die Führung über Branchen- und Führungserfahrung?", "positiv": "Lange Erfahrung, nachweisbarer Track Record", "negativ": "Neue Führung ohne Erfahrung", "einfluss": "Hoch"},
-      {"bereich": "Management", "kriterium": "Nachfolge und Vertretung", "frage": "Ist Nachfolge bzw. Vertretung geregelt?", "positiv": "Geregelte Nachfolge, Know-how dokumentiert", "negativ": "Abhängigkeit von einer Person ohne Vertretung", "einfluss": "Hoch"},
-      {"bereich": "Controlling & Planung", "kriterium": "Qualität des Berichtswesens", "frage": "Gibt es zeitnahe, verlässliche Zahlen?", "positiv": "Monatliche BWA, Soll-Ist-Vergleich, aktueller Abschluss", "negativ": "Abschluss deutlich verspätet, lückenhafte Zahlen", "einfluss": "Hoch"},
-      {"bereich": "Controlling & Planung", "kriterium": "Planungsqualität", "frage": "Sind Plan-, Liquiditäts- und Investitionsplanung vorhanden und schlüssig?", "positiv": "Nachvollziehbare Annahmen, Planungen wurden in der Vergangenheit erreicht", "negativ": "Unrealistische Planung, hohe Abweichungen Plan/Ist", "einfluss": "Hoch"},
-      {"bereich": "Sicherheiten", "kriterium": "Werthaltigkeit der Sicherheiten", "frage": "Decken verwertbare Sicherheiten den Kredit?", "positiv": "Hohe, gut verwertbare Sicherheiten (Immobilien, Bürgschaften)", "negativ": "Kaum oder schwer verwertbare Sicherheiten", "einfluss": "Mittel"},
-      {"bereich": "Sicherheiten", "kriterium": "Haftungsverbünde und Verflechtungen", "frage": "Bestehen Verflechtungen mit anderen Unternehmen oder Gesellschaftern?", "positiv": "Starke Gesellschafter, werthaltige Gesellschafterbürgschaft", "negativ": "Abhängigkeit von schwachen Konzernunternehmen", "einfluss": "Mittel"},
-      {"bereich": "Zusammenarbeit mit der Bank", "kriterium": "Transparenz und Informationsverhalten", "frage": "Werden Unterlagen vollständig und rechtzeitig geliefert?", "positiv": "Aktive, regelmäßige Information über Erfolge und Probleme", "negativ": "Unterlagen verspätet, Probleme werden verschwiegen", "einfluss": "Mittel"},
-      {"bereich": "Zusammenarbeit mit der Bank", "kriterium": "Dauer der Bankverbindung", "frage": "Wie lange besteht die Geschäftsbeziehung?", "positiv": "Lange, stabile Bankverbindung", "negativ": "Häufiger Bankwechsel", "einfluss": "Gering"},
-      {"bereich": "Negativmerkmale", "kriterium": "Auskunfteien und Zahlungsverhalten", "frage": "Gibt es Negativmerkmale bei Auskunfteien (z. B. Schufa, Creditreform)?", "positiv": "Keine Negativmerkmale, pünktliche Zahlungen", "negativ": "Zahlungsausfälle, Inkasso, Insolvenzantrag, Eidesstattliche Versicherung", "einfluss": "Sehr hoch"},
-      {"bereich": "Negativmerkmale", "kriterium": "Steuer- und Sozialabgabenrückstände", "frage": "Bestehen Rückstände bei Finanzamt, Sozialversicherung oder Mieten?", "positiv": "Keine Rückstände", "negativ": "Rückstände, Stundungen, Vollstreckungen", "einfluss": "Hoch"},
-      {"bereich": "Nachhaltigkeit (ESG)", "kriterium": "Nachhaltigkeitsrisiken", "frage": "Gibt es branchenspezifische Nachhaltigkeitsrisiken? Banken fragen dies bei größeren Krediten ab.", "positiv": "Geringe Risiken, nachvollziehbare Maßnahmen", "negativ": "Hohe Transitions- oder Umweltrisiken ohne Gegenmaßnahmen", "einfluss": "Gering bis mittel"},
-    ];
-
-    // ============================================================
-    // Einstellungen für die Bewertung (aus der Excel, Blatt „Rechner“)
-    // ============================================================
-
-    // Punkte, die eine Kennzahl je nach Ampelfarbe bekommt
+    // Punkte, die eine Kennzahl je nach Ampelfarbe bekommt (Excel, Blatt „Rechner“)
     const PUNKTE_JE_AMPEL = { gruen: 100, gelb: 70, orange: 35, rot: 0 };
 
     // Gewicht jeder Säule im Gesamtscore (zusammen 100 %)
@@ -318,9 +475,43 @@
       na: "#3a4a5a"
     };
 
+    // Namen der Branchen (Auswahl auf der Startseite)
+    const BRANCHEN_NAMEN = {
+      tech: "Tech",
+      mittelstand: "Mittelstand",
+      industrie: "Industrie",
+      immobilien: "Immobilien",
+      banken: "Banken"
+    };
+
+    // Wachstumsbewertung: Gewicht von Wachstum (CAGR) und Stabilität je Branche
+    const BRANCHEN_PROFIL = {
+      tech: { cagrGewicht: 0.8, stabilGewicht: 0.2 },
+      mittelstand: { cagrGewicht: 0.7, stabilGewicht: 0.3 },
+      industrie: { cagrGewicht: 0.65, stabilGewicht: 0.35 },
+      immobilien: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
+      banken: { cagrGewicht: 0.6, stabilGewicht: 0.4 },
+      standard: { cagrGewicht: 0.7, stabilGewicht: 0.3 }
+    };
+
+    // Wachstumsbewertung: ab welchem CAGR (in %) es 1, 2, ... 10 Punkte gibt
+    const CAGR_GRENZEN = {
+      tech: [2.5, 6.3, 7.2, 7.8, 8.7, 9.2, 10.4, 13.3, 14.6, 15.0],
+      banken: [1.4, 4.9, 5.9, 6.6, 8.1, 8.7, 10.4, 12.0, 13.6, 14.0],
+      immobilien: [-19.5, -15.5, -11.0, -3.6, 3.2, 5.8, 6.5, 7.6, 9.8, 10.0],
+      industrie: [-6.1, -3.1, 1.1, 3.5, 4.1, 4.7, 5.4, 6.3, 9.7, 10.0],
+      standard: [-6.1, -3.1, 1.1, 3.5, 4.1, 4.7, 5.4, 6.3, 9.7, 10.0]
+    };
+
+    // Farben für die Diagramme
+    const FARBE_BLAU = "#4a90e2";
+    const FARBE_GRUEN = "#5dbf8a";
+    const FARBE_ORANGE = "#e2a04a";
+    const FARBE_ROT = "#e25c4a";
+
 
     // ============================================================
-    // Kleine Hilfsfunktionen
+    // 2. Hilfsfunktionen
     // ============================================================
 
     // Prüft, ob ein Wert eine richtige Zahl ist (nicht null, nicht leer)
@@ -336,6 +527,14 @@
       });
     }
 
+    // Euro-Betrag ohne Cent, z. B. 1290000 -> "1.290.000 €"
+    function formatEuro(wert) {
+      if (!istZahl(wert)) {
+        return "–";
+      }
+      return zahlDe(wert, 0) + " €";
+    }
+
     // Erstellt ein HTML-Element mit Text, z. B. neuesElement("td", "Hallo", "wert")
     function neuesElement(tag, text, klasse) {
       const element = document.createElement(tag);
@@ -346,46 +545,61 @@
       return element;
     }
 
-    // Erstellt eine Karte (Kasten) mit Überschrift
-    function neueKarte(ueberschrift, klasse) {
-      const karte = document.createElement("div");
-      karte.className = "result-card " + klasse;
-
-      const titel = neuesElement("h2", ueberschrift);
-      titel.style.textAlign = "center";
-      titel.style.fontSize = "20px";
-      titel.style.marginBottom = "12px";
-      karte.appendChild(titel);
-      return karte;
-    }
-
-    // Kleiner grauer Erklärungstext unter einer Tabelle
-    function neuerHinweis(text) {
-      const absatz = neuesElement("p", text);
-      absatz.style.fontSize = "12px";
-      absatz.style.color = "#8aaac8";
-      absatz.style.marginTop = "12px";
-      return absatz;
-    }
-
-    // Legende mit allen Ampelfarben
-    function neueLegende() {
-      const legende = document.createElement("div");
-      legende.className = "kennzahlen-legende";
-      for (const ampel in AMPEL_FARBE) {
-        const eintrag = neuesElement("span", AMPEL_TEXT[ampel]);
-        eintrag.style.setProperty("--farbe", AMPEL_FARBE[ampel]);
-        legende.appendChild(eintrag);
+    // Erstellt eine Tabelle mit Kopfzeile. spalten = Liste mit Überschriften
+    function neueTabelle(spalten) {
+      const tabelle = neuesElement("table", "", "tabelle");
+      const kopf = document.createElement("tr");
+      for (let i = 0; i < spalten.length; i++) {
+        // Erste Spalte links, alle anderen rechtsbündig
+        let klasse = "rechts";
+        if (i === 0) {
+          klasse = "name-spalte";
+        }
+        kopf.appendChild(neuesElement("th", spalten[i], klasse));
       }
-      return legende;
+      tabelle.appendChild(kopf);
+      return tabelle;
+    }
+
+    // Pfeil und Text für eine Veränderung, z. B. pfeilText(6, "6 Pkt.") -> "▲ +6 Pkt."
+    function pfeilText(differenz, text) {
+      if (differenz > 0) return "▲ +" + text;
+      if (differenz < 0) return "▼ −" + text;
+      return "■ ±" + text;
     }
 
 
     // ============================================================
-    // Kennzahlen anzeigen und bewerten
+    // 3. Daten aus der Adresse (URL) lesen
+    // ============================================================
+    // app.py hängt die Ergebnisse als Text an die Adresse an: index2.html?results=...&branche=...
+
+    const parameter = new URLSearchParams(window.location.search);
+    const branche = (parameter.get("branche") || "").trim().toLowerCase();
+
+    let ergebnisse = [];
+    try {
+      ergebnisse = JSON.parse(parameter.get("results") || "[]");
+    } catch (fehler) {
+      ergebnisse = [];
+    }
+
+    // Jahre sortieren: ältestes zuerst
+    ergebnisse.sort(function (a, b) {
+      return Number(a.gj) - Number(b.gj);
+    });
+
+    // Das neueste und das vorletzte Jahr (für Vergleiche)
+    const neuestes = ergebnisse[ergebnisse.length - 1];
+    const vorletztes = ergebnisse[ergebnisse.length - 2];   // undefined, wenn es nur ein Jahr gibt
+    const mitVergleich = ergebnisse.length > 1;
+
+
+    // ============================================================
+    // 4. Bewertung: Ampel, Score und Vorjahresvergleich
     // ============================================================
 
-    // Zeigt einen Wert mit Einheit an, z. B. 0.253 -> "25,3 %"
+    // Zeigt einen Kennzahl-Wert mit Einheit an, z. B. 0.253 -> "25,3 %"
     function formatKennzahl(meta, wert) {
       if (!istZahl(wert)) {
         return "–";
@@ -475,11 +689,6 @@
         differenz = 0;
       }
 
-      // Pfeil und Vorzeichen
-      let pfeil = "■ ±";
-      if (differenz > 0) pfeil = "▲ +";
-      if (differenz < 0) pfeil = "▼ −";
-
       // Größe der Veränderung mit passender Einheit
       const betrag = Math.abs(differenz);
       let text = "";
@@ -515,13 +724,8 @@
         }
       }
 
-      return { text: pfeil + text, klasse: klasse };
+      return { text: pfeilText(differenz, text), klasse: klasse };
     }
-
-
-    // ============================================================
-    // Score (0–100 Punkte)
-    // ============================================================
 
     // Score einer Säule = Durchschnitt der Punkte aller bewerteten Kennzahlen dieser Säule
     function berechneSaeulenScore(eintrag, saeule) {
@@ -575,12 +779,77 @@
       return "rot";
     }
 
-    // Eine Tabellenzeile für den Score (Säule oder Gesamt)
+
+    // ============================================================
+    // 5. Abschnitt "Überblick"
+    // ============================================================
+
+    // Untertitel, z. B. "Geschäftsjahre 2024–2026 · Branche: Industrie"
+    function zeigeUntertitel() {
+      let text = "Geschäftsjahr " + neuestes.gj;
+      if (mitVergleich) {
+        text = "Geschäftsjahre " + ergebnisse[0].gj + "–" + neuestes.gj;
+      }
+      if (BRANCHEN_NAMEN[branche]) {
+        text = text + " · Branche: " + BRANCHEN_NAMEN[branche];
+      }
+      document.getElementById("untertitel").textContent = text;
+    }
+
+    // Eine Kachel mit großem Score, z. B. "Gesamtscore 94"
+    function neueKachel(titel, score, scoreVorjahr, gesamt) {
+      const ampel = scoreAmpel(score);
+      const kachel = neuesElement("div", "", "kachel");
+      if (gesamt) {
+        kachel.classList.add("gesamt");
+      }
+      kachel.style.setProperty("--farbe", AMPEL_FARBE[ampel]);
+
+      kachel.appendChild(neuesElement("div", titel, "kachel-titel"));
+
+      let wertText = "–";
+      if (score !== null) {
+        wertText = zahlDe(score, 0);
+      }
+      kachel.appendChild(neuesElement("div", wertText, "kachel-wert"));
+
+      // Text darunter: Ampel und Veränderung zum Vorjahr
+      let text = AMPEL_TEXT[ampel];
+      const unterzeile = neuesElement("div", "", "kachel-text");
+      if (score !== null && istZahl(scoreVorjahr)) {
+        const differenz = Math.round(score) - Math.round(scoreVorjahr);
+        text = text + " · " + pfeilText(differenz, Math.abs(differenz) + " zum Vorjahr");
+        if (differenz > 0) unterzeile.classList.add("besser");
+        if (differenz < 0) unterzeile.classList.add("schlechter");
+      }
+      unterzeile.textContent = text;
+      kachel.appendChild(unterzeile);
+      return kachel;
+    }
+
+    function zeigeKacheln() {
+      const bereich = document.getElementById("kacheln");
+
+      let gesamtVorjahr = null;
+      if (mitVergleich) {
+        gesamtVorjahr = berechneGesamtScore(vorletztes);
+      }
+      bereich.appendChild(neueKachel("Gesamtscore GJ " + neuestes.gj, berechneGesamtScore(neuestes), gesamtVorjahr, true));
+
+      for (const saeule in SAEULEN_GEWICHTE) {
+        let vorjahr = null;
+        if (mitVergleich) {
+          vorjahr = berechneSaeulenScore(vorletztes, saeule);
+        }
+        bereich.appendChild(neueKachel(saeule, berechneSaeulenScore(neuestes, saeule), vorjahr, false));
+      }
+    }
+
+    // Eine Zeile der Score-Tabelle: Name, ein Feld pro Jahr, Veränderung zum Vorjahr
     function scoreZeile(name, scores) {
       const zeile = document.createElement("tr");
       zeile.appendChild(neuesElement("td", name));
 
-      // Ein Feld pro Jahr
       for (const score of scores) {
         const ampel = scoreAmpel(score);
         let text = "–";
@@ -592,49 +861,35 @@
         zeile.appendChild(feld);
       }
 
-      // Vergleich: letztes Jahr gegenüber vorletztem Jahr
-      if (scores.length > 1) {
+      if (mitVergleich) {
         const aktuell = scores[scores.length - 1];
         const vorjahr = scores[scores.length - 2];
         const feld = neuesElement("td", "–", "vergleich");
-
         if (aktuell !== null && vorjahr !== null) {
-          const differenz = aktuell - vorjahr;
-          if (differenz > 0) {
-            feld.textContent = "▲ +" + zahlDe(differenz, 0) + " Pkt.";
-            feld.classList.add("besser");
-          } else if (differenz < 0) {
-            feld.textContent = "▼ −" + zahlDe(-differenz, 0) + " Pkt.";
-            feld.classList.add("schlechter");
-          } else {
-            feld.textContent = "■ ±0 Pkt.";
-          }
+          const differenz = Math.round(aktuell) - Math.round(vorjahr);
+          feld.textContent = pfeilText(differenz, Math.abs(differenz) + " Pkt.");
+          if (differenz > 0) feld.classList.add("besser");
+          if (differenz < 0) feld.classList.add("schlechter");
         }
         zeile.appendChild(feld);
       }
       return zeile;
     }
 
-    function baueScoreKarte(jahre) {
-      const karte = neueKarte("Pre-Rating Score (0–100)", "score-card");
-      const tabelle = document.createElement("table");
-      tabelle.className = "kennzahlen-tabelle";
-
-      // Kopfzeile
-      const kopf = document.createElement("tr");
-      kopf.appendChild(neuesElement("th", "Säule (Gewicht)"));
-      for (const eintrag of jahre) {
-        kopf.appendChild(neuesElement("th", "GJ " + eintrag.gj, "rechts"));
+    function zeigeScoreTabelle() {
+      const spalten = ["Säule (Gewicht)"];
+      for (const eintrag of ergebnisse) {
+        spalten.push("GJ " + eintrag.gj);
       }
-      if (jahre.length > 1) {
-        kopf.appendChild(neuesElement("th", "Δ Vorjahr", "rechts"));
+      if (mitVergleich) {
+        spalten.push("Δ Vorjahr");
       }
-      tabelle.appendChild(kopf);
+      const tabelle = neueTabelle(spalten);
 
       // Eine Zeile pro Säule
       for (const saeule in SAEULEN_GEWICHTE) {
         const scores = [];
-        for (const eintrag of jahre) {
+        for (const eintrag of ergebnisse) {
           scores.push(berechneSaeulenScore(eintrag, saeule));
         }
         const name = saeule + " (" + zahlDe(SAEULEN_GEWICHTE[saeule] * 100, 0) + " %)";
@@ -643,689 +898,552 @@
 
       // Zeile für den Gesamtscore
       const gesamtScores = [];
-      for (const eintrag of jahre) {
+      for (const eintrag of ergebnisse) {
         gesamtScores.push(berechneGesamtScore(eintrag));
       }
       const gesamtZeile = scoreZeile("Gesamtbewertung", gesamtScores);
       gesamtZeile.className = "gesamt";
       tabelle.appendChild(gesamtZeile);
 
-      const scrollBereich = document.createElement("div");
-      scrollBereich.className = "kennzahlen-scroll";
-      scrollBereich.appendChild(tabelle);
-      karte.appendChild(scrollBereich);
-
-      karte.appendChild(neuerHinweis(
-        "Punkte je Kennzahl: Grün 100, Gelb 70, Orange 35, Rot 0. Säulen-Score = Durchschnitt, Gesamt = gewichteter Durchschnitt. " +
-        "Ampel: Grün ab 75, Gelb ab 55, Orange ab 35, darunter Rot. Nicht berechenbare Kennzahlen werden ignoriert. " +
-        "Das ist ein Pre-Rating aus harten Faktoren und ersetzt kein Bankrating."
-      ));
-
-      // Score-Karte ganz oben anzeigen (vor den Jahres-Karten)
-      container.parentElement.insertBefore(karte, container);
+      document.getElementById("score-tabelle").appendChild(tabelle);
     }
 
+    // Tabelle mit den wichtigsten Euro-Beträgen pro Jahr
+    function zeigeFinanzuebersicht() {
+      const zeilen = [
+        ["Umsatzerlöse", "umsatz"],
+        ["EBITDA", "ebitda"],
+        ["Jahresüberschuss", "jahresueberschuss"],
+        ["Cashflow", "cashflow"],
+        ["Bilanzsumme", "bilanzsumme"],
+        ["Eigenkapital", "eigenkapital"],
+        ["Fremdkapital", "fremdkapital"],
+        ["Liquide Mittel", "liquide_mittel"]
+      ];
 
-    // ============================================================
-    // Kennzahlen-Tabelle
-    // ============================================================
-
-    function baueKennzahlenTabelle(jahre) {
-      // Wenn keine Kennzahlen da sind, kommt das Ergebnis von einer alten app.py aus dem Browser-Cache
-      if (jahre.length === 0 || !jahre[0].kennzahlen) {
-        const hinweis = neuesElement("div",
-          "Kennzahlen fehlen: Der Browser hat eine alte Version der Analyse geladen. " +
-          "Bitte die Startseite mit Strg+F5 neu laden und die Analyse erneut starten.",
-          "result-card kennzahlen-card");
-        container.parentElement.appendChild(hinweis);
-        return;
-      }
-
-      baueScoreKarte(jahre);
-
-      // Für den Vorjahresvergleich: letztes und vorletztes Jahr
-      const mitVergleich = jahre.length > 1;
-      const aktuellesJahr = jahre[jahre.length - 1];
-      const vorjahr = jahre[jahre.length - 2];
-
-      const karte = neueKarte("Kennzahlen aus Bilanz und GuV", "kennzahlen-card");
-      karte.appendChild(neueLegende());
-
-      const tabelle = document.createElement("table");
-      tabelle.className = "kennzahlen-tabelle";
-
-      // Kopfzeile
-      const kopf = document.createElement("tr");
-      kopf.appendChild(neuesElement("th", "Kennzahl"));
-      for (const eintrag of jahre) {
-        kopf.appendChild(neuesElement("th", "GJ " + eintrag.gj, "rechts"));
+      const spalten = ["Position"];
+      for (const eintrag of ergebnisse) {
+        spalten.push("GJ " + eintrag.gj);
       }
       if (mitVergleich) {
-        kopf.appendChild(neuesElement("th", "Δ " + vorjahr.gj + " → " + aktuellesJahr.gj, "rechts"));
+        spalten.push("Δ Vorjahr");
       }
-      kopf.appendChild(neuesElement("th", "Ziel (Grün)"));
-      tabelle.appendChild(kopf);
+      const tabelle = neueTabelle(spalten);
 
-      let anzahlSpalten = jahre.length + 2;
-      if (mitVergleich) {
-        anzahlSpalten = anzahlSpalten + 1;
-      }
-
-      // Eine Zeile pro Kennzahl
-      let letzteSaeule = "";
-      for (const meta of KENNZAHLEN_META) {
-
-        // Neue Säule -> Zwischenüberschrift
-        if (meta.saeule !== letzteSaeule) {
-          letzteSaeule = meta.saeule;
-          const ueberschrift = document.createElement("tr");
-          ueberschrift.className = "saeule";
-          const feld = neuesElement("th", meta.saeule);
-          feld.colSpan = anzahlSpalten;
-          ueberschrift.appendChild(feld);
-          tabelle.appendChild(ueberschrift);
-        }
-
+      for (const zeileInfo of zeilen) {
+        const name = zeileInfo[0];
+        const schluessel = zeileInfo[1];
         const zeile = document.createElement("tr");
+        zeile.appendChild(neuesElement("td", name));
 
-        // 1. Spalte: Name, Bedeutung (Kern/Wichtig/Ergänzend) und Formel
-        const nameFeld = neuesElement("td", meta.id + " " + meta.name);
-        nameFeld.title = meta.hinweis;
-        nameFeld.appendChild(neuesElement("span", meta.bedeutung, "bedeutung bedeutung-" + meta.bedeutung.toLowerCase()));
-        nameFeld.appendChild(neuesElement("span", meta.formel, "formel"));
-        zeile.appendChild(nameFeld);
-
-        // Ein Feld pro Jahr, eingefärbt nach Ampel
-        for (const eintrag of jahre) {
-          const ergebnis = eintrag.kennzahlen[meta.id];
-          const ampel = bewerteKennzahl(meta, ergebnis);
-
-          let wert = null;
-          let tooltip = AMPEL_TEXT[ampel];
-          if (ergebnis) {
-            wert = ergebnis.wert;
-            if (ergebnis.hinweis) {
-              tooltip = tooltip + " – " + ergebnis.hinweis;
-            }
+        for (const eintrag of ergebnisse) {
+          const wert = eintrag.werte[schluessel];
+          const feld = neuesElement("td", formatEuro(wert), "rechts");
+          if (istZahl(wert) && wert < 0) {
+            feld.classList.add("negativ");
           }
-
-          const feld = neuesElement("td", formatKennzahl(meta, wert), "wert ampel-" + ampel);
-          feld.title = tooltip;
           zeile.appendChild(feld);
         }
 
-        // Vergleich mit dem Vorjahr (nur bei Kennzahlen mit trend: true)
+        // Veränderung in Prozent zum Vorjahr
         if (mitVergleich) {
-          const feld = neuesElement("td", "", "vergleich");
-          const jetzt = aktuellesJahr.kennzahlen[meta.id];
-          const vorher = vorjahr.kennzahlen[meta.id];
-          if (meta.trend && jetzt && vorher) {
-            const vergleich = vergleichMitVorjahr(meta, jetzt.wert, vorher.wert);
-            feld.textContent = vergleich.text;
-            if (vergleich.klasse !== "") {
-              feld.classList.add(vergleich.klasse);
-            }
+          const aktuell = neuestes.werte[schluessel];
+          const vorjahr = vorletztes.werte[schluessel];
+          const feld = neuesElement("td", "–", "vergleich");
+          if (istZahl(aktuell) && istZahl(vorjahr) && vorjahr !== 0) {
+            const prozent = (aktuell - vorjahr) / Math.abs(vorjahr) * 100;
+            feld.textContent = pfeilText(prozent, zahlDe(Math.abs(prozent), 1) + " %");
           }
           zeile.appendChild(feld);
         }
-
-        // Letzte Spalte: Zielwert
-        zeile.appendChild(neuesElement("td", zielText(meta), "ziel"));
         tabelle.appendChild(zeile);
       }
 
-      const scrollBereich = document.createElement("div");
-      scrollBereich.className = "kennzahlen-scroll";
-      scrollBereich.appendChild(tabelle);
-      karte.appendChild(scrollBereich);
+      document.getElementById("finanzuebersicht").appendChild(tabelle);
+    }
 
-      karte.appendChild(neuerHinweis(
-        "Schwellenwerte sind Orientierungswerte (Faustwerte), keine Bankvorgaben, und sollten je Branche angepasst werden. " +
-        "Langfristiges Fremdkapital: laut Spalte \"Fristigkeit\" (kurz/lang); ohne diese Spalte gelten Darlehen/Bankverbindlichkeiten und Pensionsrückstellungen als langfristig. " +
-        "C05–C07 brauchen die Zusatzangaben Tilgung, Entnahmen/Ausschüttungen und Investitionen in der GuV-Datei. " +
-        "Vorjahresvergleich (grün = verbessert, rot = verschlechtert) bei ausgewählten Kennzahlen. Mit der Maus über einen Wert fahren für Details."
-      ));
+    // Standardabweichung: wie stark schwanken die Werte um ihren Durchschnitt?
+    function standardabweichung(werte) {
+      if (werte.length === 0) {
+        return 0;
+      }
+      let summe = 0;
+      for (const wert of werte) {
+        summe = summe + wert;
+      }
+      const mittelwert = summe / werte.length;
 
-      container.parentElement.appendChild(karte);
+      let summeQuadrate = 0;
+      for (const wert of werte) {
+        summeQuadrate = summeQuadrate + (wert - mittelwert) * (wert - mittelwert);
+      }
+      return Math.sqrt(summeQuadrate / werte.length);
+    }
+
+    // 0–10 Punkte für das durchschnittliche Wachstum (CAGR in %), je nach Branche
+    function cagrPunkte(cagrProzent) {
+      let grenzen = CAGR_GRENZEN[branche];
+      if (!grenzen) {
+        grenzen = CAGR_GRENZEN.standard;
+      }
+      // Für jede erreichte Grenze einen Punkt mehr (die Grenzen sind aufsteigend sortiert)
+      let punkte = 0;
+      for (let i = 0; i < 9; i++) {
+        if (cagrProzent >= grenzen[i]) {
+          punkte = i + 1;
+        }
+      }
+      // 10 Punkte nur, wenn die letzte Grenze überschritten ist
+      if (cagrProzent > grenzen[9]) {
+        punkte = 10;
+      }
+      return punkte;
+    }
+
+    // 0–10 Punkte für die Stabilität: je weniger das Wachstum schwankt, desto besser
+    function stabilitaetPunkte(schwankung) {
+      if (schwankung < 1.5) return 10;
+      if (schwankung < 3) return 8;
+      if (schwankung < 5) return 6;
+      if (schwankung < 7) return 4;
+      if (schwankung < 10) return 2;
+      return 0;
+    }
+
+    function zeigeWachstum() {
+      const bereich = document.getElementById("wachstum");
+
+      if (!mitVergleich) {
+        bereich.appendChild(neuesElement("p", "Für die Wachstumsanalyse werden mindestens 2 Geschäftsjahre gebraucht."));
+        return;
+      }
+
+      // Wachstum von Jahr zu Jahr in %
+      const wachstum = [];
+      for (let i = 1; i < ergebnisse.length; i++) {
+        const vorher = ergebnisse[i - 1].werte.umsatz;
+        const nachher = ergebnisse[i].werte.umsatz;
+        if (vorher > 0) {
+          wachstum.push((nachher - vorher) / vorher * 100);
+        }
+      }
+
+      // CAGR = durchschnittliches Wachstum pro Jahr
+      // Bei 3 Jahren (2024 -> 2026) gibt es 2 Wachstumsschritte, deshalb "Anzahl Jahre - 1"
+      const startUmsatz = ergebnisse[0].werte.umsatz;
+      const endUmsatz = neuestes.werte.umsatz;
+      const anzahlSchritte = ergebnisse.length - 1;
+      let cagrProzent = null;
+      if (startUmsatz > 0 && endUmsatz >= 0) {
+        cagrProzent = (Math.pow(endUmsatz / startUmsatz, 1 / anzahlSchritte) - 1) * 100;
+      }
+
+      const schwankung = standardabweichung(wachstum);
+
+      let profil = BRANCHEN_PROFIL[branche];
+      if (!profil) {
+        profil = BRANCHEN_PROFIL.standard;
+      }
+
+      let punkteWachstum = 0;
+      if (cagrProzent !== null) {
+        punkteWachstum = cagrPunkte(cagrProzent);
+      }
+      const punkteStabilitaet = stabilitaetPunkte(schwankung);
+      const punkteGesamt = punkteWachstum * profil.cagrGewicht + punkteStabilitaet * profil.stabilGewicht;
+
+      // Als kleine Tabelle anzeigen
+      const tabelle = neueTabelle(["Kennzahl", "Wert", "Punkte"]);
+      const zeilen = [
+        ["Ø Umsatzwachstum pro Jahr (CAGR)", cagrProzent === null ? "–" : zahlDe(cagrProzent, 1) + " %", punkteWachstum + " / 10"],
+        ["Schwankung des Wachstums", zahlDe(schwankung, 1) + " %-Pkt.", punkteStabilitaet + " / 10"]
+      ];
+      for (const zeileInfo of zeilen) {
+        const zeile = document.createElement("tr");
+        zeile.appendChild(neuesElement("td", zeileInfo[0]));
+        zeile.appendChild(neuesElement("td", zeileInfo[1], "rechts"));
+        zeile.appendChild(neuesElement("td", zeileInfo[2], "rechts"));
+        tabelle.appendChild(zeile);
+      }
+      const gesamtZeile = document.createElement("tr");
+      gesamtZeile.className = "gesamt";
+      gesamtZeile.appendChild(neuesElement("td", "Wachstumsbewertung (gewichtet)"));
+      gesamtZeile.appendChild(neuesElement("td", ""));
+      gesamtZeile.appendChild(neuesElement("td", zahlDe(punkteGesamt, 1) + " / 10", "rechts"));
+      tabelle.appendChild(gesamtZeile);
+      bereich.appendChild(tabelle);
+
+      let brancheText = "Standard";
+      if (BRANCHEN_NAMEN[branche]) {
+        brancheText = BRANCHEN_NAMEN[branche];
+      }
+      bereich.appendChild(neuesElement("p",
+        "Gewichtung für Branche " + brancheText + ": Wachstum " + zahlDe(profil.cagrGewicht * 100, 0) +
+        " %, Stabilität " + zahlDe(profil.stabilGewicht * 100, 0) + " %. Grundlage sind die Umsatzerlöse.",
+        "hinweis"));
     }
 
 
     // ============================================================
-    // Weiche Faktoren (Checkliste zum Aufklappen)
+    // 6. Abschnitt "Kennzahlen im Detail"
     // ============================================================
 
-    function baueWeicheFaktoren() {
-      const karte = neueKarte("Weiche Faktoren (nicht aus Bilanz/GuV ableitbar)", "kennzahlen-card");
+    function zeigeLegende() {
+      const legende = document.getElementById("legende");
+      for (const ampel in AMPEL_FARBE) {
+        const eintrag = neuesElement("span", AMPEL_TEXT[ampel]);
+        eintrag.style.setProperty("--farbe", AMPEL_FARBE[ampel]);
+        legende.appendChild(eintrag);
+      }
+    }
 
-      // <details> = Bereich, den man auf- und zuklappen kann
-      const aufklappen = document.createElement("details");
-      aufklappen.appendChild(neuesElement("summary",
-        "Checkliste mit " + WEICHE_FAKTOREN.length + " Kriterien anzeigen, die Banken zusätzlich prüfen"));
+    // Eine Tabellenzeile für eine Kennzahl
+    function kennzahlZeile(meta) {
+      const zeile = document.createElement("tr");
 
-      const tabelle = document.createElement("table");
-      tabelle.className = "kennzahlen-tabelle";
+      // 1. Spalte: Name, Bedeutung (Kern/Wichtig/Ergänzend) und Formel
+      const nameFeld = neuesElement("td", meta.id + " " + meta.name);
+      nameFeld.title = meta.hinweis;
+      nameFeld.appendChild(neuesElement("span", meta.bedeutung, "bedeutung bedeutung-" + meta.bedeutung.toLowerCase()));
+      nameFeld.appendChild(neuesElement("span", meta.formel, "formel"));
+      zeile.appendChild(nameFeld);
 
-      const kopf = document.createElement("tr");
-      kopf.appendChild(neuesElement("th", "Kriterium"));
-      kopf.appendChild(neuesElement("th", "Prüffrage"));
-      kopf.appendChild(neuesElement("th", "Positiv"));
-      kopf.appendChild(neuesElement("th", "Negativ"));
-      kopf.appendChild(neuesElement("th", "Einfluss"));
-      tabelle.appendChild(kopf);
+      // Ein Feld pro Jahr, eingefärbt nach Ampel
+      for (const eintrag of ergebnisse) {
+        const ergebnis = eintrag.kennzahlen[meta.id];
+        const ampel = bewerteKennzahl(meta, ergebnis);
 
-      let letzterBereich = "";
-      for (const faktor of WEICHE_FAKTOREN) {
-        // Neuer Bereich -> Zwischenüberschrift
-        if (faktor.bereich !== letzterBereich) {
-          letzterBereich = faktor.bereich;
-          const ueberschrift = document.createElement("tr");
-          ueberschrift.className = "saeule";
-          const feld = neuesElement("th", faktor.bereich);
-          feld.colSpan = 5;
-          ueberschrift.appendChild(feld);
-          tabelle.appendChild(ueberschrift);
+        let wert = null;
+        let tooltip = AMPEL_TEXT[ampel];
+        if (ergebnis) {
+          wert = ergebnis.wert;
+          if (ergebnis.hinweis) {
+            tooltip = tooltip + " – " + ergebnis.hinweis;
+          }
         }
 
-        const zeile = document.createElement("tr");
-        zeile.appendChild(neuesElement("td", faktor.kriterium));
-        zeile.appendChild(neuesElement("td", faktor.frage));
-        zeile.appendChild(neuesElement("td", faktor.positiv));
-        zeile.appendChild(neuesElement("td", faktor.negativ));
-        zeile.appendChild(neuesElement("td", faktor.einfluss));
-        tabelle.appendChild(zeile);
+        const feld = neuesElement("td", formatKennzahl(meta, wert), "wert ampel-" + ampel);
+        feld.title = tooltip;
+        zeile.appendChild(feld);
       }
 
-      const scrollBereich = document.createElement("div");
-      scrollBereich.className = "kennzahlen-scroll";
-      scrollBereich.appendChild(tabelle);
-      aufklappen.appendChild(scrollBereich);
-      karte.appendChild(aufklappen);
+      // Vergleich mit dem Vorjahr (nur bei Kennzahlen mit trend: true)
+      if (mitVergleich) {
+        const feld = neuesElement("td", "", "vergleich");
+        const jetzt = neuestes.kennzahlen[meta.id];
+        const vorher = vorletztes.kennzahlen[meta.id];
+        if (meta.trend && jetzt && vorher) {
+          const vergleich = vergleichMitVorjahr(meta, jetzt.wert, vorher.wert);
+          feld.textContent = vergleich.text;
+          if (vergleich.klasse !== "") {
+            feld.classList.add(vergleich.klasse);
+          }
+        }
+        zeile.appendChild(feld);
+      }
 
-      container.parentElement.appendChild(karte);
+      // Letzte Spalte: Zielwert
+      zeile.appendChild(neuesElement("td", zielText(meta), "ziel"));
+      return zeile;
     }
 
-    const rawResults = params.get("results");
-    if (rawResults) {
-      try {
-        ergebnisse = JSON.parse(rawResults);
-      } catch (e) {
-        ergebnisse = [];
+    // Für jede Säule ein aufklappbarer Block mit eigener Tabelle
+    function zeigeKennzahlen() {
+      const liste = document.getElementById("kennzahlen-liste");
+
+      for (const saeule in SAEULEN_GEWICHTE) {
+        // <details open> = Bereich, der offen ist und zugeklappt werden kann
+        const block = neuesElement("details", "", "saeule-block");
+        block.open = true;
+
+        // Überschrift mit Score des neuesten Jahres
+        const ueberschrift = neuesElement("summary", saeule);
+        const score = berechneSaeulenScore(neuestes, saeule);
+        let punkteText = "–";
+        if (score !== null) {
+          punkteText = zahlDe(score, 0) + " Punkte";
+        }
+        const punkte = neuesElement("span", punkteText + " (GJ " + neuestes.gj + ")", "punkte");
+        punkte.style.background = AMPEL_FARBE[scoreAmpel(score)];
+        ueberschrift.appendChild(punkte);
+        block.appendChild(ueberschrift);
+
+        // Tabelle
+        const spalten = ["Kennzahl"];
+        for (const eintrag of ergebnisse) {
+          spalten.push("GJ " + eintrag.gj);
+        }
+        if (mitVergleich) {
+          spalten.push("Δ " + vorletztes.gj + " → " + neuestes.gj);
+        }
+        spalten.push("Ziel (Grün)");
+        const tabelle = neueTabelle(spalten);
+
+        for (const meta of KENNZAHLEN_META) {
+          if (meta.saeule === saeule) {
+            tabelle.appendChild(kennzahlZeile(meta));
+          }
+        }
+
+        const scrollBereich = neuesElement("div", "", "scroll");
+        scrollBereich.appendChild(tabelle);
+        block.appendChild(scrollBereich);
+        liste.appendChild(block);
       }
     }
 
-    // Fallback für ältere Links mit Einzelwerten
-    if (!ergebnisse.length) {
-      const msg = params.get("eq_msg") || "Keine Daten gefunden.";
-      const ek = parseFloat(params.get("ek") || "0");
-      const bs = parseFloat(params.get("bs") || "0");
-      ergebnisse = [{ gj: "", msg, ek, bs }];
+
+    // ============================================================
+    // 7. Diagramme (mit Chart.js)
+    // ============================================================
+
+    // Einstellungen, die für alle Diagramme gelten (helle Schrift auf dunklem Hintergrund)
+    function diagrammGrundeinstellungen() {
+      Chart.defaults.color = "#c8ddf5";
+      Chart.defaults.borderColor = "rgba(200, 221, 245, 0.12)";
+      Chart.defaults.maintainAspectRatio = false;
     }
 
-    const container = document.getElementById("charts-container");
-
-    function parseJahrWert(jahrText) {
-      const jahr = Number(String(jahrText || "").trim());
-      return Number.isFinite(jahr) ? jahr : null;
+    // Liste mit allen Jahren, z. B. ["2024", "2025", "2026"]
+    function jahresListe() {
+      const jahre = [];
+      for (const eintrag of ergebnisse) {
+        jahre.push(eintrag.gj);
+      }
+      return jahre;
     }
 
-    function cagrPunkte(cagrProzent, brancheWert) {
-      if (brancheWert === "tech") {
-        if (cagrProzent < 2.5) return 0;
-        if (cagrProzent < 6.3) return 1;
-        if (cagrProzent < 7.2) return 2;
-        if (cagrProzent < 7.8) return 3;
-        if (cagrProzent < 8.7) return 4;
-        if (cagrProzent < 9.2) return 5;
-        if (cagrProzent < 10.4) return 6;
-        if (cagrProzent < 13.3) return 7;
-        if (cagrProzent < 14.6) return 8;
-        if (cagrProzent <= 15) return 9;
-        return 10;
+    // Liste mit einem Wert pro Jahr, z. B. werteListe("eigenkapital")
+    function werteListe(schluessel) {
+      const liste = [];
+      for (const eintrag of ergebnisse) {
+        liste.push(eintrag.werte[schluessel]);
       }
-
-      if (brancheWert === "banken") {
-        if (cagrProzent < 1.4) return 0;
-        if (cagrProzent < 4.9) return 1;
-        if (cagrProzent < 5.9) return 2;
-        if (cagrProzent < 6.6) return 3;
-        if (cagrProzent < 8.1) return 4;
-        if (cagrProzent < 8.7) return 5;
-        if (cagrProzent < 10.4) return 6;
-        if (cagrProzent < 12.0) return 7;
-        if (cagrProzent < 13.6) return 8;
-        if (cagrProzent <= 14.0) return 9;
-        return 10;
-      }
-
-      if (brancheWert === "immobilien") {
-        if (cagrProzent < -19.5) return 0;
-        if (cagrProzent < -15.5) return 1;
-        if (cagrProzent < -11.0) return 2;
-        if (cagrProzent < -3.6) return 3;
-        if (cagrProzent < 3.2) return 4;
-        if (cagrProzent < 5.8) return 5;
-        if (cagrProzent < 6.5) return 6;
-        if (cagrProzent < 7.6) return 7;
-        if (cagrProzent < 9.8) return 8;
-        if (cagrProzent <= 10.0) return 9;
-        return 10;
-      }
-
-      if (brancheWert === "industrie") {
-        if (cagrProzent < -6.1) return 0;
-        if (cagrProzent < -3.1) return 1;
-        if (cagrProzent < 1.1) return 2;
-        if (cagrProzent < 3.5) return 3;
-        if (cagrProzent < 4.1) return 4;
-        if (cagrProzent < 4.7) return 5;
-        if (cagrProzent < 5.4) return 6;
-        if (cagrProzent < 6.3) return 7;
-        if (cagrProzent < 9.7) return 8;
-        if (cagrProzent <= 10.0) return 9;
-        return 10;
-      }
-
-      if (cagrProzent < -6.1) return 0;
-      if (cagrProzent < -3.1) return 1;
-      if (cagrProzent < 1.1) return 2;
-      if (cagrProzent < 3.5) return 3;
-      if (cagrProzent < 4.1) return 4;
-      if (cagrProzent < 4.7) return 5;
-      if (cagrProzent < 5.4) return 6;
-      if (cagrProzent < 6.3) return 7;
-      if (cagrProzent < 9.7) return 8;
-      if (cagrProzent <= 10.0) return 9;
-      return 10;
+      return liste;
     }
 
-    function standardabweichung(arr) {
-      if (!arr.length) return 0;
-      const mittelwert = arr.reduce((sum, x) => sum + x, 0) / arr.length;
-      const varianz = arr.reduce((sum, x) => sum + ((x - mittelwert) ** 2), 0) / arr.length;
-      return Math.sqrt(varianz);
+    // Statt eines Diagramms einen Hinweis anzeigen (z. B. wenn Daten fehlen)
+    function zeigeDiagrammHinweis(bereichId, text) {
+      const bereich = document.getElementById(bereichId);
+      bereich.textContent = text;
+      bereich.style.height = "auto";
+      bereich.className = "hinweis";
     }
 
-    function stabilitaetPunkte(stabilWerte) {
-      const sd = standardabweichung(stabilWerte);
-      if (sd < 1.5) return { punkte: 10, sd };
-      if (sd < 3) return { punkte: 8, sd };
-      if (sd < 5) return { punkte: 6, sd };
-      if (sd < 7) return { punkte: 4, sd };
-      if (sd < 10) return { punkte: 2, sd };
-      return { punkte: 0, sd };
+    // Tooltip, der Beträge als Euro anzeigt
+    function euroTooltip(kontext) {
+      return kontext.dataset.label + ": " + formatEuro(kontext.parsed.y);
     }
 
-    function baueAnalyseBericht(daten) {
-      if (daten.length < 2) {
-        return;
+    // Diagramm 1: Score je Säule (ein Balken pro Jahr)
+    function zeichneScoreDiagramm() {
+      const saeulen = Object.keys(SAEULEN_GEWICHTE);
+      const blautoene = ["#2b5d8f", "#3a78b8", "#4a90e2", "#7db9f0", "#a8d1f7"];
+
+      const datensaetze = [];
+      for (let i = 0; i < ergebnisse.length; i++) {
+        const eintrag = ergebnisse[i];
+        const scores = [];
+        for (const saeule of saeulen) {
+          scores.push(berechneSaeulenScore(eintrag, saeule));
+        }
+        // Neuestes Jahr am hellsten
+        const farbe = blautoene[blautoene.length - ergebnisse.length + i] || FARBE_BLAU;
+        datensaetze.push({ label: "GJ " + eintrag.gj, data: scores, backgroundColor: farbe });
       }
 
-      const profil = BRANCHEN_PROFIL[branche] || BRANCHEN_PROFIL.default;
-      const erstes = daten[0];
-      const letztes = daten[daten.length - 1];
-      const startUmsatz = erstes.umsatz;
-      const endUmsatz = letztes.umsatz;
-      const n = daten.length;
-
-      let cagr = 0;
-      let cagrBerechenbar = false;
-      if (startUmsatz > 0 && n > 0) {
-        cagr = (endUmsatz / startUmsatz) ** (1 / n) - 1;
-        cagrBerechenbar = Number.isFinite(cagr);
-      }
-
-      const wachstum = daten
-        .map((eintrag, index, arr) => {
-          if (index === 0) return null;
-          const vorher = arr[index - 1].umsatz;
-          if (vorher <= 0) return null;
-          return ((eintrag.umsatz - vorher) / vorher) * 100;
-        })
-        .filter((w) => w !== null);
-
-      const cagrProzent = cagrBerechenbar ? cagr * 100 : 0;
-      const punkteCagr = cagrBerechenbar ? cagrPunkte(cagrProzent, branche) : 0;
-      const stabil = stabilitaetPunkte(wachstum);
-      const punkteGesamt = (punkteCagr * profil.cagrGewicht) + (stabil.punkte * profil.stabilGewicht);
-
-      const report = document.createElement("div");
-      report.className = "result-card report-card";
-
-      const titel = document.createElement("h2");
-      titel.style.marginTop = "0";
-      titel.style.marginBottom = "8px";
-      titel.style.textAlign = "left";
-      titel.textContent = "Analyse Bericht";
-
-      const grid = document.createElement("div");
-      grid.className = "report-grid";
-      grid.style.gridTemplateColumns = "1fr";
-
-      const zeilen = [
-        `CAGR Ergebnis: ${cagrBerechenbar ? cagrProzent.toFixed(2) + "%" : "nicht berechenbar"}`,
-        `Umsatzstabilität: ${stabil.sd.toFixed(2)}%`,
-        `Gesamtpunkte (gewichtet): ${punkteGesamt.toFixed(2)} / 10`,
-      ];
-
-      zeilen.forEach((text) => {
-        const p = document.createElement("p");
-        p.className = "report-line";
-        p.textContent = text;
-        grid.appendChild(p);
+      new Chart(document.getElementById("diagramm-score"), {
+        type: "bar",
+        data: { labels: saeulen, datasets: datensaetze },
+        options: {
+          scales: {
+            y: { min: 0, max: 100, title: { display: true, text: "Punkte" } }
+          }
+        }
       });
-
-      report.appendChild(titel);
-      report.appendChild(grid);
-
-      container.parentElement.insertBefore(report, container);
     }
 
-    ergebnisse.forEach((eintrag, index) => {
-      const ek = Number(eintrag.ek || 0);
-      const bs = Number(eintrag.bs || 0);
-      const restAktiva = Math.max(bs - ek, 0);
-      const overview = eintrag.overview || {};
-      const fremdkapital = Number(overview["Fremdkapital"] ?? overview["Freumdkapital"] ?? 0);
-
-      let verschuldungsgradText = "Der Verschuldungsgrad beträgt nicht berechenbar";
-      if (ek > 0) {
-        const verschuldungsgrad = (fremdkapital / ek) * 100;
-        verschuldungsgradText = `Der Verschuldungsgrad beträgt ${verschuldungsgrad.toFixed(2)}%`;
-      }
-
-      const block = document.createElement("div");
-      block.className = "result-card";
-
-      const titel = document.createElement("h2");
-      titel.style.textAlign = "center";
-      titel.style.fontSize = "20px";
-      titel.style.marginBottom = "10px";
-      titel.textContent = eintrag.gj ? `GJ ${eintrag.gj}` : "Ergebnis";
-
-      const text = document.createElement("p");
-      text.style.fontSize = "18px";
-      text.style.marginBottom = "20px";
-      text.textContent = eintrag.msg || "Keine Daten gefunden.";
-
-      const canvas = document.createElement("canvas");
-      canvas.id = `eq-chart-${index}`;
-      canvas.width = 400;
-      canvas.height = 400;
-      canvas.style.maxWidth = "400px";
-      canvas.style.display = "block";
-      canvas.style.margin = "0 auto";
-
-      const verschuldungsgradP = document.createElement("p");
-      verschuldungsgradP.style.textAlign = "center";
-      verschuldungsgradP.style.fontSize = "17px";
-      verschuldungsgradP.style.marginTop = "12px";
-      verschuldungsgradP.style.marginBottom = "12px";
-      verschuldungsgradP.textContent = verschuldungsgradText;
-
-      block.appendChild(titel);
-      block.appendChild(text);
-      block.appendChild(canvas);
-      block.appendChild(verschuldungsgradP);
-
-      const tableTitle = document.createElement("h3");
-      tableTitle.style.textAlign = "center";
-      tableTitle.style.fontSize = "18px";
-      tableTitle.style.marginTop = "25px";
-      tableTitle.style.marginBottom = "12px";
-      tableTitle.textContent = eintrag.gj ? `Financel Overview ${eintrag.gj}` : "Financel Overview";
-
-      const table = document.createElement("table");
-      table.style.width = "100%";
-      table.style.maxWidth = "640px";
-      table.style.margin = "0 auto";
-      table.style.borderCollapse = "collapse";
-      table.style.background = "#1f2f40";
-      table.style.border = "1px solid #36516b";
-
-      const kopf = document.createElement("tr");
-      const kopfLinks = document.createElement("th");
-      kopfLinks.textContent = "Kennzahl";
-      kopfLinks.style.padding = "10px";
-      kopfLinks.style.textAlign = "left";
-      kopfLinks.style.borderBottom = "1px solid #36516b";
-
-      const kopfRechts = document.createElement("th");
-      kopfRechts.textContent = "Wert";
-      kopfRechts.style.padding = "10px";
-      kopfRechts.style.textAlign = "right";
-      kopfRechts.style.borderBottom = "1px solid #36516b";
-
-      kopf.appendChild(kopfLinks);
-      kopf.appendChild(kopfRechts);
-      table.appendChild(kopf);
-
-      const zeilen = [
-        ["Gesamtumsatz", overview["Gesamtumsatz"]],
-        ["EBITA", overview["EBITA"]],
-        ["Jahresüberschuss", overview["Jahresüberschuss"]],
-        ["Bilanzsumme", overview["Bilanzsumme"]],
-        ["Eigenkapital", overview["Eigenkapital"]],
-        ["Fremdkapital", overview["Fremdkapital"] ?? overview["Freumdkapital"]],
-        ["Cash", overview["Cash"]],
-      ];
-
-      zeilen.forEach((eintragZeile) => {
-        const tr = document.createElement("tr");
-
-        const tdName = document.createElement("td");
-        tdName.textContent = eintragZeile[0];
-        tdName.style.padding = "10px";
-        tdName.style.borderBottom = "1px solid #2b4157";
-
-        const tdWert = document.createElement("td");
-        tdWert.textContent = formatWert(eintragZeile[0], eintragZeile[1]);
-        tdWert.style.padding = "10px";
-        tdWert.style.textAlign = "right";
-        tdWert.style.borderBottom = "1px solid #2b4157";
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdWert);
-        table.appendChild(tr);
-      });
-
-      block.appendChild(tableTitle);
-      block.appendChild(table);
-      container.appendChild(block);
-
-      if (!(ek > 0 || bs > 0)) {
-        return;
-      }
-
-      new Chart(canvas, {
-        type: "pie",
-        plugins: [ChartDataLabels],
+    // Diagramm 2: Kapitalstruktur (gestapelte Balken: Eigenkapital + langfr. + kurzfr. Fremdkapital)
+    function zeichneKapitalstruktur() {
+      new Chart(document.getElementById("diagramm-kapitalstruktur"), {
+        type: "bar",
         data: {
-          labels: ["Eigenkapital", "Restliche Aktiva"],
-          datasets: [{
-            data: [ek, restAktiva],
-            backgroundColor: ["#4a90e2", "#e25c4a"],
-            borderColor: ["#1a2a3a", "#1a2a3a"],
-            borderWidth: 2
-          }]
+          labels: jahresListe(),
+          datasets: [
+            { label: "Eigenkapital", data: werteListe("eigenkapital"), backgroundColor: FARBE_GRUEN },
+            { label: "Langfristiges Fremdkapital", data: werteListe("langfr_fk"), backgroundColor: FARBE_BLAU },
+            { label: "Kurzfristiges Fremdkapital", data: werteListe("kurzfr_fk"), backgroundColor: FARBE_ORANGE }
+          ]
         },
         options: {
-          plugins: {
-            legend: { labels: { color: "#e8eef6", font: { size: 14 } } },
-            datalabels: {
-              color: "#ffffff",
-              font: { size: 14, weight: "bold" },
-              formatter: (value, ctx) => {
-                const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                if (total === 0) {
-                  return "0.0%";
-                }
-                return (value / total * 100).toFixed(1) + "%";
-              }
-            }
-          }
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, ticks: { callback: formatEuro } }
+          },
+          plugins: { tooltip: { callbacks: { label: euroTooltip } } }
         }
       });
-    });
+    }
 
-    const trendDaten = ergebnisse
-      .map((eintrag) => {
-        const overview = eintrag.overview || {};
-        return {
-          gj: String(eintrag.gj || "").trim(),
-          umsatz: Number(overview["Gesamtumsatz"] || 0),
-          eigenkapital: Number(overview["Eigenkapital"] ?? eintrag.ek ?? 0)
-        };
-      })
-      .filter((eintrag) => eintrag.gj !== "")
-      .sort((a, b) => {
-        const aJahr = parseJahrWert(a.gj);
-        const bJahr = parseJahrWert(b.gj);
+    // Diagramm 3: Kapitaldienstgrenze (was man zahlen könnte) gegen Kapitaldienst (was man zahlen muss)
+    function zeichneKapitaldienst() {
+      const grenze = werteListe("kapitaldienstgrenze");
+      const kapitaldienst = werteListe("kapitaldienst");
 
-        if (aJahr !== null && bJahr !== null) {
-          return aJahr - bJahr;
+      // Ohne Zusatzangaben gibt es keine Daten -> Hinweis statt Diagramm
+      let hatDaten = false;
+      for (let i = 0; i < grenze.length; i++) {
+        if (istZahl(grenze[i]) && istZahl(kapitaldienst[i])) {
+          hatDaten = true;
         }
-        return a.gj.localeCompare(b.gj, "de");
+      }
+      if (!hatDaten) {
+        zeigeDiagrammHinweis("kapitaldienst-bereich", "Für dieses Diagramm werden die Zusatzangaben Tilgung, " +
+          "Entnahmen/Ausschüttungen und Investitionen in der GuV-Datei gebraucht (siehe Beispiel-GuV).");
+        return;
+      }
+
+      new Chart(document.getElementById("diagramm-kapitaldienst"), {
+        type: "bar",
+        data: {
+          labels: jahresListe(),
+          datasets: [
+            { label: "Kapitaldienstgrenze (verfügbar)", data: grenze, backgroundColor: FARBE_GRUEN },
+            { label: "Kapitaldienst (Zins + Tilgung)", data: kapitaldienst, backgroundColor: FARBE_ROT }
+          ]
+        },
+        options: {
+          scales: { y: { ticks: { callback: formatEuro } } },
+          plugins: { tooltip: { callbacks: { label: euroTooltip } } }
+        }
       });
+    }
 
-    baueAnalyseBericht(trendDaten);
+    // Diagramm 4: Umsatzwachstum in % (Linie links) und Eigenkapital in € (Linie rechts)
+    function zeichneUmsatzUndEigenkapital() {
+      // Wachstum braucht mindestens 2 Jahre
+      if (!mitVergleich) {
+        zeigeDiagrammHinweis("umsatz-bereich", "Für dieses Diagramm werden mindestens 2 Geschäftsjahre gebraucht.");
+        return;
+      }
 
-    // Jahre sortieren (ältestes zuerst), dann Score, Kennzahlen und weiche Faktoren anzeigen
-    const jahreSortiert = ergebnisse.slice();
-    jahreSortiert.sort(function (a, b) {
-      return Number(a.gj) - Number(b.gj);
-    });
-    baueKennzahlenTabelle(jahreSortiert);
-    baueWeicheFaktoren();
-
-    if (trendDaten.length > 0) {
-      const jahre = trendDaten.map((eintrag) => eintrag.gj);
-      const eigenkapitalWerte = trendDaten.map((eintrag) => eintrag.eigenkapital);
-
-      const umsatzwachstumWerte = trendDaten.map((eintrag, index, arr) => {
-        if (index === 0) {
-          return null;
+      // Umsatzwachstum: für das erste Jahr gibt es keinen Vergleich (null)
+      const wachstum = [null];
+      for (let i = 1; i < ergebnisse.length; i++) {
+        const vorher = ergebnisse[i - 1].werte.umsatz;
+        const nachher = ergebnisse[i].werte.umsatz;
+        if (vorher > 0) {
+          wachstum.push((nachher - vorher) / vorher * 100);
+        } else {
+          wachstum.push(null);
         }
+      }
 
-        const vorher = arr[index - 1].umsatz;
-        if (vorher <= 0) {
-          return null;
-        }
-
-        return ((eintrag.umsatz - vorher) / vorher) * 100;
-      });
-
-      const trendCard = document.createElement("div");
-      trendCard.className = "result-card trend-card";
-
-      const trendTitle = document.createElement("h2");
-      trendTitle.style.textAlign = "center";
-      trendTitle.style.fontSize = "20px";
-      trendTitle.style.marginBottom = "14px";
-      trendTitle.textContent = "Umsatzwachstum und Eigenkapitalentwicklung";
-
-      const trendWrap = document.createElement("div");
-      trendWrap.className = "trend-chart-wrap";
-
-      const trendCanvas = document.createElement("canvas");
-      trendCanvas.id = "trend-chart";
-
-      trendWrap.appendChild(trendCanvas);
-      trendCard.appendChild(trendTitle);
-      trendCard.appendChild(trendWrap);
-      container.parentElement.appendChild(trendCard);
-
-      new Chart(trendCanvas, {
+      new Chart(document.getElementById("diagramm-umsatz"), {
         type: "line",
         data: {
-          labels: jahre,
+          labels: jahresListe(),
           datasets: [
             {
               label: "Umsatzwachstum (%)",
-              data: umsatzwachstumWerte,
-              yAxisID: "yPercent",
-              borderColor: "#4a90e2",
-              backgroundColor: "rgba(74, 144, 226, 0.2)",
+              data: wachstum,
+              yAxisID: "yProzent",
+              borderColor: FARBE_BLAU,
+              backgroundColor: FARBE_BLAU,
               borderWidth: 3,
               tension: 0.3,
-              pointRadius: 4,
-              pointHoverRadius: 6,
               spanGaps: true
             },
             {
-              label: "Eigenkapital (EUR)",
-              data: eigenkapitalWerte,
+              label: "Eigenkapital (€)",
+              data: werteListe("eigenkapital"),
               yAxisID: "yEuro",
-              borderColor: "#5dbf8a",
-              backgroundColor: "rgba(93, 191, 138, 0.2)",
+              borderColor: FARBE_GRUEN,
+              backgroundColor: FARBE_GRUEN,
               borderWidth: 3,
-              tension: 0.3,
-              pointRadius: 4,
-              pointHoverRadius: 6
+              tension: 0.3
             }
           ]
         },
         options: {
-          maintainAspectRatio: false,
-          interaction: {
-            mode: "index",
-            intersect: false
-          },
-          plugins: {
-            legend: {
-              labels: {
-                color: "#e8eef6",
-                font: { size: 13 }
-              }
-            },
-            datalabels: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const label = ctx.dataset.label || "";
-                  const value = ctx.parsed.y;
-
-                  if (ctx.dataset.yAxisID === "yPercent") {
-                    if (value === null || Number.isNaN(value)) {
-                      return `${label}: keine Basis`;
-                    }
-                    return `${label}: ${value.toFixed(2)}%`;
-                  }
-
-                  return `${label}: ${formatEuro(value)}`;
-                }
-              }
-            }
-          },
+          interaction: { mode: "index", intersect: false },
           scales: {
-            x: {
-              ticks: { color: "#c8ddf5" },
-              grid: { color: "rgba(200, 221, 245, 0.12)" }
-            },
-            yPercent: {
-              type: "linear",
+            yProzent: {
               position: "left",
               ticks: {
-                color: "#4a90e2",
-                callback: (value) => `${value}%`
-              },
-              grid: { color: "rgba(200, 221, 245, 0.12)" }
+                color: FARBE_BLAU,
+                callback: function (wert) { return wert + " %"; }
+              }
             },
             yEuro: {
-              type: "linear",
               position: "right",
-              ticks: {
-                color: "#5dbf8a",
-                callback: (value) => formatEuro(value)
-              },
-              grid: {
-                drawOnChartArea: false
+              grid: { drawOnChartArea: false },
+              ticks: { color: FARBE_GRUEN, callback: formatEuro }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (kontext) {
+                  const wert = kontext.parsed.y;
+                  if (kontext.dataset.yAxisID === "yProzent") {
+                    if (!istZahl(wert)) {
+                      return kontext.dataset.label + ": kein Vorjahr";
+                    }
+                    return kontext.dataset.label + ": " + zahlDe(wert, 1) + " %";
+                  }
+                  return kontext.dataset.label + ": " + formatEuro(wert);
+                }
               }
             }
           }
         }
       });
+    }
+
+
+    // ============================================================
+    // 8. Seite aufbauen
+    // ============================================================
+
+    function zeigeMeldung(text) {
+      const meldung = neuesElement("div", text, "meldung");
+      document.getElementById("meldung").appendChild(meldung);
+      // Abschnitte ausblenden, weil es nichts anzuzeigen gibt
+      document.getElementById("ueberblick").style.display = "none";
+      document.getElementById("kennzahlen").style.display = "none";
+      document.getElementById("diagramme").style.display = "none";
+    }
+
+    if (ergebnisse.length === 0) {
+      zeigeMeldung("Keine Daten gefunden. Bitte auf der Startseite Bilanz und GuV hochladen und die Analyse starten.");
+    } else if (!neuestes.werte || !neuestes.kennzahlen) {
+      // Ergebnis kommt von einer alten app.py aus dem Browser-Cache
+      zeigeMeldung("Der Browser hat eine alte Version der Analyse geladen. " +
+        "Bitte die Startseite mit Strg+F5 neu laden und die Analyse erneut starten.");
+    } else {
+      // 1. Überblick
+      zeigeUntertitel();
+      zeigeKacheln();
+      zeigeScoreTabelle();
+      zeigeFinanzuebersicht();
+      zeigeWachstum();
+
+      // 2. Kennzahlen
+      zeigeLegende();
+      zeigeKennzahlen();
+
+      // 3. Diagramme (nur wenn Chart.js geladen werden konnte)
+      if (typeof Chart === "undefined") {
+        document.getElementById("diagramme").appendChild(
+          neuesElement("p", "Die Diagramme konnten nicht geladen werden (keine Internetverbindung?).", "meldung"));
+      } else {
+        diagrammGrundeinstellungen();
+        zeichneScoreDiagramm();
+        zeichneKapitalstruktur();
+        zeichneKapitaldienst();
+        zeichneUmsatzUndEigenkapital();
+      }
     }
   </script>
 </body>
