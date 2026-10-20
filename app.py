@@ -1,12 +1,41 @@
-﻿from pyscript import document, when, window
+﻿"""
+Finanzanalyse – Berechnung (läuft mit PyScript im Browser)
+
+Ablauf, wenn man auf "Finanzanalyse starten" klickt:
+  1. Die hochgeladenen CSV-Dateien (Bilanz und GuV) werden eingelesen.
+  2. Es wird geprüft, ob alle nötigen Spalten da sind und die Bilanz aufgeht.
+  3. Für jedes Geschäftsjahr werden die wichtigen Posten zusammengezählt.
+  4. Daraus werden die Kennzahlen berechnet (mit Vorjahr, wenn vorhanden).
+  5. Die Ergebnisse werden an die Ergebnisseite (index2.html) geschickt.
+    Dort werden Ampelfarben, Score und Diagramme angezeigt.
+
+Abschnitte in dieser Datei:
+  1. Einstellungen
+  2. CSV einlesen und Text vorbereiten
+  3. Geschäftsjahre
+  4. Prüfungen
+  5. Posten sammeln (Bilanz und GuV)
+  6. Kennzahlen berechnen
+  7. Alle Jahre analysieren
+  8. Button "Finanzanalyse starten"
+"""
+
+from pyscript import document, when, window
 import csv
 import json
-from datetime import datetime
 
-AKTUELLES_JAHR = datetime.now().year
+
+# ============================================================
+# 1. Einstellungen
+# ============================================================
+
 # Bei jeder neuen Version erhöhen (auch in index.html), damit Browser keine alten Dateien aus dem Cache laden
-VERSION = "46"
+VERSION = "47"
 
+
+# ============================================================
+# 2. CSV einlesen und Text vorbereiten
+# ============================================================
 
 def parse_csv(text):
     """Liest CSV-Text (Semikolon-getrennt) und gibt eine Liste von Zeilen zurück."""
@@ -61,6 +90,11 @@ def normalisiere_text(text):
     return t
 
 
+# ============================================================
+# 3. Geschäftsjahre
+# ============================================================
+# Die Spalte heißt "GJ", "Geschaeftsjahr" oder "Geschäftsjahr".
+
 def hole_gj_wert(zeile):
     """Liest das Geschäftsjahr aus verschiedenen Spaltennamen."""
     gj = (zeile.get("GJ", "") or "").strip()
@@ -107,44 +141,16 @@ def hole_gj_liste(daten):
     return jahre
 
 
-def ist_zusatzangabe(zeile):
-    """Prüft, ob eine GuV-Zeile eine Zusatzangabe ist (Kategorie "Zusatzangaben").
-
-    Zusatzangaben sind z. B. Tilgung, Entnahmen und Investitionen. Sie werden für den
-    Kapitaldienst gebraucht, gehören aber nicht zum Jahresergebnis.
-    """
-    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
-    return "zusatz" in kategorie
-
-
-def hole_guv_seite(zeile):
-    """Liest haben/soll aus der GuV-Zeile, mit einfachem Fallback."""
-    if ist_zusatzangabe(zeile):
+def vorjahr_von(jahr):
+    """Gibt das Vorjahr als Text zurück, z. B. "2025" -> "2024"."""
+    if not jahr.isdigit():
         return ""
+    return str(int(jahr) - 1)
 
-    seite = normalisiere_text(zeile.get("Seite", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("seite", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("SollHaben", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("Soll/Haben", "") or "")
 
-    if seite in ["haben", "habenseite", "h"]:
-        return "haben"
-    if seite in ["soll", "sollseite", "s"]:
-        return "soll"
-
-    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
-    position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
-
-    if "ertrag" in kategorie or "erloes" in kategorie or "umsatz" in position:
-        return "haben"
-    if "aufwand" in kategorie or "kosten" in kategorie:
-        return "soll"
-
-    return ""
-
+# ============================================================
+# 4. Prüfungen
+# ============================================================
 
 def pruefe_eingaben(bilanz_text, guv_text):
     hat_bilanz = bool((bilanz_text or "").strip())
@@ -172,33 +178,6 @@ def pruefe_pflicht_spalten(daten, pflicht_spalten, name):
     return True, f"{name} OK"
 
 
-def zeige_loader(sichtbar):
-    loader = document.getElementById("loader")
-    if loader:
-        loader.style.display = "block" if sichtbar else "none"
-
-
-def eigenkapitalquote(bilanz_jahr):
-    eigenkapital = 0.0
-    bilanzsumme_aktiva = 0.0
-
-    for zeile in bilanz_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        kategorie = text_klein(zeile, "Kategorie")
-        seite = text_klein(zeile, "Seite")
-
-        if kategorie == "eigenkapital":
-            eigenkapital += betrag
-        if seite == "aktiva":
-            bilanzsumme_aktiva += betrag
-
-    if bilanzsumme_aktiva == 0:
-        return "Eigenkapitalquote: Keine Aktiva-Bilanzsumme gefunden.", 0.0, 0.0
-
-    quote = (eigenkapital / bilanzsumme_aktiva) * 100
-    return f"Die Eigenkapitalquote beträgt {quote:.2f}%", eigenkapital, bilanzsumme_aktiva
-
-
 def pruefe_bilanzsumme_fuer_jahr(bilanz_jahr, toleranz=0.01):
     aktiva = 0.0
     passiva = 0.0
@@ -217,71 +196,11 @@ def pruefe_bilanzsumme_fuer_jahr(bilanz_jahr, toleranz=0.01):
     return True
 
 
-def baue_financel_overview(bilanz_jahr, guv_jahr, bilanzsumme_aktiva, eigenkapital):
-    umsatz = 0.0
-    haben = 0.0
-    soll = 0.0
-
-    for zeile in guv_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = hole_guv_seite(zeile)
-
-        if seite == "haben":
-            umsatz += betrag
-            haben += betrag
-        elif seite == "soll":
-            soll += betrag
-
-    jahresergebnis = haben - soll
-    if jahresergebnis >= 0:
-        jahresueberschuss_text = f"Gewinn[{jahresergebnis:.2f}]"
-    else:
-        jahresueberschuss_text = f"Verlust[{abs(jahresergebnis):.2f}]"
-
-    passiva_summe = 0.0
-    cash = 0.0
-
-    for zeile in bilanz_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = text_klein(zeile, "Seite")
-        unterkategorie = normalisiere_text(zeile.get("Unterkategorie", ""))
-
-        if seite == "passiva":
-            passiva_summe += betrag
-        if "liquide mittel" in unterkategorie:
-            cash += betrag
-
-    fremdkapital = passiva_summe - eigenkapital
-    if fremdkapital < 0:
-        fremdkapital = 0.0
-
-    return {
-        "Gesamtumsatz": umsatz,
-        "EBITA": 0.0,
-        "Jahresüberschuss": jahresueberschuss_text,
-        "Bilanzsumme": bilanzsumme_aktiva,
-        "Eigenkapital": eigenkapital,
-        "Fremdkapital": fremdkapital,
-        "Cash": cash,
-    }
-
-
 # ============================================================
-# Kennzahlen aus Bilanz und GuV
+# 5. Posten sammeln (Bilanz und GuV)
 # ============================================================
-#
-# Ablauf:
-# 1. sammle_bilanz_posten()  -> zählt die wichtigen Bilanzposten eines Jahres zusammen
-# 2. sammle_guv_posten()     -> zählt die wichtigen GuV-Posten eines Jahres zusammen
-# 3. berechne_kennzahlen()   -> rechnet daraus alle Kennzahlen aus
-#
-# Jede Kennzahl wird so gespeichert:
-#   {"wert": 0.25, "hinweis": "...", "ampel": "rot"}
-#   - wert:    die Zahl (Prozent als Anteil, also 0.25 = 25 %) oder None, wenn nicht berechenbar
-#   - hinweis: Erklärung, z. B. "Vorjahr fehlt" (optional)
-#   - ampel:   nur bei Sonderfällen, z. B. "rot" bei negativem Eigenkapital (optional)
-# Die Ampelfarben selbst werden auf der Ergebnisseite (index2.html) bestimmt.
-
+# Hier werden die Zeilen der CSV-Dateien zu Summen zusammengezählt,
+# z. B. alle Zeilen mit Kategorie "Eigenkapital" -> eigenkapital.
 
 def ist_lul(text):
     """Prüft, ob eine Position zu "Lieferungen und Leistungen" gehört."""
@@ -398,6 +317,45 @@ def sammle_bilanz_posten(bilanz_jahr):
     return posten
 
 
+def ist_zusatzangabe(zeile):
+    """Prüft, ob eine GuV-Zeile eine Zusatzangabe ist (Kategorie "Zusatzangaben").
+
+    Zusatzangaben sind z. B. Tilgung, Entnahmen und Investitionen. Sie werden für den
+    Kapitaldienst gebraucht, gehören aber nicht zum Jahresergebnis.
+    """
+    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
+    return "zusatz" in kategorie
+
+
+def hole_guv_seite(zeile):
+    """Liest haben/soll aus der GuV-Zeile, mit einfachem Fallback."""
+    if ist_zusatzangabe(zeile):
+        return ""
+
+    seite = normalisiere_text(zeile.get("Seite", "") or "")
+    if not seite:
+        seite = normalisiere_text(zeile.get("seite", "") or "")
+    if not seite:
+        seite = normalisiere_text(zeile.get("SollHaben", "") or "")
+    if not seite:
+        seite = normalisiere_text(zeile.get("Soll/Haben", "") or "")
+
+    if seite in ["haben", "habenseite", "h"]:
+        return "haben"
+    if seite in ["soll", "sollseite", "s"]:
+        return "soll"
+
+    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
+    position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
+
+    if "ertrag" in kategorie or "erloes" in kategorie or "umsatz" in position:
+        return "haben"
+    if "aufwand" in kategorie or "kosten" in kategorie:
+        return "soll"
+
+    return ""
+
+
 def sammle_guv_posten(guv_jahr):
     """Zählt die GuV-Posten eines Jahres zusammen, die für die Kennzahlen gebraucht werden."""
     posten = {
@@ -484,6 +442,17 @@ def sammle_guv_posten(guv_jahr):
     )
     return posten
 
+
+# ============================================================
+# 6. Kennzahlen berechnen
+# ============================================================
+#
+# Jede Kennzahl wird so gespeichert:
+#   {"wert": 0.25, "hinweis": "...", "ampel": "rot"}
+#   - wert:    die Zahl (Prozent als Anteil, also 0.25 = 25 %) oder None, wenn nicht berechenbar
+#   - hinweis: Erklärung, z. B. "Vorjahr fehlt" (optional)
+#   - ampel:   nur bei Sonderfällen, z. B. "rot" bei negativem Eigenkapital (optional)
+# Die Ampelfarben selbst werden auf der Ergebnisseite (index2.html) bestimmt.
 
 def teile(zaehler, nenner):
     """Teilt zwei Zahlen. Gibt None zurück, wenn man nicht teilen kann (z. B. durch 0)."""
@@ -651,14 +620,41 @@ def berechne_kennzahlen(bilanz, guv, bilanz_vorjahr=None, guv_vorjahr=None):
     return k
 
 
-def vorjahr_von(jahr):
-    """Gibt das Vorjahr als Text zurück, z. B. "2025" -> "2024"."""
-    if not jahr.isdigit():
-        return ""
-    return str(int(jahr) - 1)
+def uebersicht_werte(bilanz, guv, kennzahlen):
+    """Wichtige Beträge in Euro für die Finanzübersicht und die Diagramme auf der Ergebnisseite."""
+    # Kapitaldienst = Zinsen + Tilgung (nur wenn die Tilgung angegeben ist)
+    kapitaldienst = None
+    if guv["tilgung"] is not None:
+        kapitaldienst = guv["zinsaufwand"] + guv["tilgung"]
 
+    return {
+        "umsatz": guv["umsatz"],
+        "ebitda": guv["ebitda"],
+        "jahresueberschuss": guv["jahresueberschuss"],
+        "cashflow": kennzahlen["C01"]["wert"],
+        "bilanzsumme": bilanz["bilanzsumme"],
+        "eigenkapital": bilanz["eigenkapital"],
+        "fremdkapital": bilanz["fremdkapital"],
+        "langfr_fk": bilanz["langfr_fk"],
+        "kurzfr_fk": bilanz["kurzfr_fk"],
+        "liquide_mittel": bilanz["liquide_mittel"],
+        "kapitaldienstgrenze": kennzahlen["C05"]["wert"],
+        "kapitaldienst": kapitaldienst,
+    }
+
+
+# ============================================================
+# 7. Alle Jahre analysieren
+# ============================================================
 
 def analysiere_alle_jahre(bilanz, guv):
+    """Berechnet für jedes Geschäftsjahr die Kennzahlen.
+
+    Rückgabe: (ergebnisse, fehlertext, gemeinsame_jahre)
+    - ergebnisse: Liste mit einem Eintrag pro Jahr: {"gj": ..., "werte": ..., "kennzahlen": ...}
+    - fehlertext: None, wenn alles geklappt hat
+    """
+    # Nur Jahre nehmen, die in Bilanz UND GuV vorkommen
     bilanz_jahre = hole_gj_liste(bilanz)
     guv_jahre = hole_gj_liste(guv)
 
@@ -670,33 +666,22 @@ def analysiere_alle_jahre(bilanz, guv):
     if not gemeinsame_jahre:
         return None, "⚠️ Keine gemeinsamen GJ-Daten in Bilanz und GuV gefunden.", []
 
-    ergebnisse = []
+    # Schritt 1: Bilanz jedes Jahres prüfen (Aktiva = Passiva)
+    for jahr in gemeinsame_jahre:
+        bilanz_jahr = lade_und_filtere_nach_jahr(bilanz, jahr)
+        if not pruefe_bilanzsumme_fuer_jahr(bilanz_jahr):
+            return None, "⚠️ Bilanzsummen stimmen nicht überein (GJ " + jahr + ": Aktiva ≠ Passiva)", gemeinsame_jahre
 
-    # Zuerst für jedes Jahr die Posten sammeln, damit wir später aufs Vorjahr zugreifen können
+    # Schritt 2: Für jedes Jahr die Posten sammeln (vorher, damit wir aufs Vorjahr zugreifen können)
     bilanz_posten = {}
     guv_posten = {}
     for jahr in gemeinsame_jahre:
         bilanz_posten[jahr] = sammle_bilanz_posten(lade_und_filtere_nach_jahr(bilanz, jahr))
         guv_posten[jahr] = sammle_guv_posten(lade_und_filtere_nach_jahr(guv, jahr))
 
+    # Schritt 3: Kennzahlen für jedes Jahr berechnen
+    ergebnisse = []
     for jahr in gemeinsame_jahre:
-        bilanz_jahr = lade_und_filtere_nach_jahr(bilanz, jahr)
-        guv_jahr = lade_und_filtere_nach_jahr(guv, jahr)
-
-        if not bilanz_jahr or not guv_jahr:
-            continue
-
-        if not pruefe_bilanzsumme_fuer_jahr(bilanz_jahr):
-            return None, "bilanzsummen stimmen nicht überein", gemeinsame_jahre
-
-        eq_msg, eigenkapital, bilanzsumme_aktiva = eigenkapitalquote(bilanz_jahr)
-        overview = baue_financel_overview(
-            bilanz_jahr,
-            guv_jahr,
-            bilanzsumme_aktiva,
-            eigenkapital,
-        )
-
         # Vorjahr suchen (gibt es nicht, wenn es das älteste Jahr ist)
         vorjahr = vorjahr_von(jahr)
         bilanz_vorjahr = None
@@ -705,28 +690,26 @@ def analysiere_alle_jahre(bilanz, guv):
             bilanz_vorjahr = bilanz_posten[vorjahr]
             guv_vorjahr = guv_posten[vorjahr]
 
-        kennzahlen = berechne_kennzahlen(
-            bilanz_posten[jahr],
-            guv_posten[jahr],
-            bilanz_vorjahr,
-            guv_vorjahr,
-        )
+        kennzahlen = berechne_kennzahlen(bilanz_posten[jahr], guv_posten[jahr], bilanz_vorjahr, guv_vorjahr)
+        werte = uebersicht_werte(bilanz_posten[jahr], guv_posten[jahr], kennzahlen)
 
-        ergebnisse.append(
-            {
-                "gj": jahr,
-                "msg": eq_msg,
-                "ek": eigenkapital,
-                "bs": bilanzsumme_aktiva,
-                "overview": overview,
-                "kennzahlen": kennzahlen,
-            }
-        )
-
-    if not ergebnisse:
-        return None, "⚠️ Keine auswertbaren Daten nach GJ-Filterung gefunden.", gemeinsame_jahre
+        ergebnisse.append({
+            "gj": jahr,
+            "werte": werte,
+            "kennzahlen": kennzahlen,
+        })
 
     return ergebnisse, None, gemeinsame_jahre
+
+
+# ============================================================
+# 8. Button "Finanzanalyse starten"
+# ============================================================
+
+def zeige_loader(sichtbar):
+    loader = document.getElementById("loader")
+    if loader:
+        loader.style.display = "block" if sichtbar else "none"
 
 
 @when("click", "#startButton")
@@ -810,20 +793,3 @@ def finanzanalyse_starten(event=None):
         output.textContent = f"❌ Fehler: {e}"
     finally:
         zeige_loader(False)
-
-def Finanzanalyse_starten(event=None):
-    finanzanalyse_starten(event)
-
-def Format_Prüfung_Bilanz(bilanz):
-    return pruefe_pflicht_spalten(
-        bilanz,
-        ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"],
-        "Bilanz",
-    )
-
-def Format_Prüfung_GuV(guv):
-    return pruefe_pflicht_spalten(
-        guv,
-        ["position", "Kategorie", "Betrag_EUR"],
-        "GuV",
-    )

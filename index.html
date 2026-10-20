@@ -2,22 +2,24 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=46">
+  <link rel="stylesheet" href="index.css?v=47">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 30px auto;
+      padding: 0 16px;
       max-width: 1400px;
       color: #e8eef6;
     }
 
     .main-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 30px;
       margin-top: 20px;
     }
@@ -27,11 +29,17 @@
       margin-bottom: 8px;
     }
 
+    /* Auf schmalen Bildschirmen kann man die Beispieltabellen seitlich wischen */
+    .tabelle-scroll {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
     .beispiel-tabelle {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 0;
       background: #fafafa;
       color: #222;
       border-radius: 8px;
@@ -118,8 +126,69 @@
       text-align: center;
     }
 
-    .ergebnis-bereich {
-      margin-top: 30px;
+    /* Leere Ausgabe-Felder nicht anzeigen */
+    pre:empty {
+      display: none;
+    }
+
+    /* Die 3 Schritte links */
+    .schritt {
+      background: #1a2a3a;
+      border: 1px solid #2f4f72;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .schritt-titel {
+      font-size: 18px;
+      margin: 0 0 12px 0;
+    }
+
+    .schritt-nr {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      text-align: center;
+      border-radius: 50%;
+      background: #005fb8;
+      color: #ffffff;
+      margin-right: 6px;
+    }
+
+    .feld-titel {
+      display: block;
+      font-weight: bold;
+      margin: 12px 0 8px 0;
+    }
+
+    .oder {
+      color: #8aaac8;
+      font-size: 14px;
+      margin: 14px 0 8px 0;
+    }
+
+    #branche {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #4a90e2;
+      background: #1a2a3a;
+      color: #e8eef6;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: #8aaac8;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
     pre {
@@ -187,21 +256,76 @@
 <body>
   <h1 style="text-align:center;">Finanzanalyse</h1>
   <p style="text-align:center; color:#8aaac8; margin-top:-10px; font-size:15px;">
-    Analysiert die liquiden Mittel und überprüft Unternehmen auf Kredittauglichkeit
+    Bonitätsprüfung (Pre-Rating) aus Bilanz und GuV – mit Kennzahlen, Ampeln und Score
   </p>
 
   <div class="main-layout">
 
-    <!-- LINKS: Beispieltabellen -->
+    <!-- ===== LINKS: Analyse in 3 Schritten ===== -->
+    <div class="upload-seite">
+
+      <!-- Schritt 1: Dateien -->
+      <div class="schritt">
+        <h2 class="schritt-titel"><span class="schritt-nr">1</span> Dateien hochladen</h2>
+
+        <label class="feld-titel">📊 Bilanz (CSV)</label>
+        <div class="upload-zone" id="dropzone-bilanz">
+          <p>Drag &amp; Drop oder Datei wählen</p>
+          <input type="file" id="csvBilanz" accept=".csv" multiple>
+          <div class="upload-status" id="status-bilanz"></div>
+        </div>
+
+        <label class="feld-titel">📈 GuV (CSV)</label>
+        <div class="upload-zone" id="dropzone-guv">
+          <p>Drag &amp; Drop oder Datei wählen</p>
+          <input type="file" id="csvGuV" accept=".csv" multiple>
+          <div class="upload-status" id="status-guv"></div>
+        </div>
+
+        <p class="oder">… oder zum Ausprobieren:</p>
+        <button type="button" class="download-button" id="beispielLaden">▶ Beispieldaten 2024–2026 laden</button>
+
+        <!-- Hier speichert die Seite den Inhalt der hochgeladenen Dateien (unsichtbar) -->
+        <div id="data-bilanz" style="display:none"></div>
+        <div id="data-guv" style="display:none"></div>
+      </div>
+
+      <!-- Schritt 2: Branche -->
+      <div class="schritt">
+        <h2 class="schritt-titel"><span class="schritt-nr">2</span> Branche wählen</h2>
+        <select id="branche">
+          <option value="">-- Bitte wählen (optional) --</option>
+          <option value="tech">Tech</option>
+          <option value="mittelstand">Mittelstand</option>
+          <option value="industrie">Industrie</option>
+          <option value="immobilien">Immobilien</option>
+          <option value="banken">Banken</option>
+        </select>
+      </div>
+
+      <!-- Schritt 3: Start -->
+      <div class="schritt">
+        <h2 class="schritt-titel"><span class="schritt-nr">3</span> Analyse starten</h2>
+        <button id="startButton">Finanzanalyse starten</button>
+        <div id="loader">⏳ Analyse läuft...</div>
+        <pre id="output"></pre>
+        <details>
+          <summary>Upload-Protokoll anzeigen</summary>
+          <pre id="upload-log"></pre>
+        </details>
+      </div>
+    </div>
+
+    <!-- ===== RECHTS: So müssen die Dateien aussehen ===== -->
     <div class="beispiel-seite">
       <div class="hinweis">
-        📋 So müssen eure CSV-Dateien aufgebaut sein (Semikolon-getrennt):
+        📋 So müssen eure CSV-Dateien aufgebaut sein (Semikolon-getrennt).
+        Das Beispiel enthält die Geschäftsjahre 2024, 2025 und 2026.
       </div>
 
       <div class="download-box">
-        <p class="download-title">Beispieldateien (Geschäftsjahre 2024, 2025 und 2026)</p>
+        <p class="download-title">Beispieldateien herunterladen</p>
         <div class="download-links">
-          <button type="button" class="download-button" id="beispielLaden">▶ Beispieldaten direkt laden</button>
           <button type="button" class="download-button" id="beispielHerunterladen">⬇ Bilanz + GuV herunterladen</button>
           <a class="download-button" href="beispiel_bilanz.csv" download>Bilanz CSV</a>
           <a class="download-button" href="beispiel_guv.csv" download>GuV CSV</a>
@@ -210,6 +334,7 @@
       </div>
 
       <h3>📊 Beispiel Bilanz</h3>
+      <div class="tabelle-scroll">
       <table class="beispiel-tabelle">
         <tr>
           <th>Bilanzposition</th>
@@ -231,8 +356,10 @@
         <tr><td>Bankdarlehen</td><td>Verbindlichkeiten</td><td>Bankdarlehen</td><td>300.000</td><td>Passiva</td><td>2025</td><td>lang</td></tr>
         <tr><td>Verbindl. aus LuL</td><td>Verbindlichkeiten</td><td>Lieferanten</td><td>95.000</td><td>Passiva</td><td>2025</td><td>kurz</td></tr>
       </table>
+      </div>
 
       <h3>📈 Beispiel GuV</h3>
+      <div class="tabelle-scroll">
       <table class="beispiel-tabelle">
         <tr>
           <th>Position</th>
@@ -252,6 +379,7 @@
         <tr><td>Entnahmen und Ausschüttungen</td><td>Zusatzangaben</td><td>127.000</td><td>2025</td></tr>
         <tr><td>Betriebsnotwendige Investitionen</td><td>Zusatzangaben</td><td>135.000</td><td>2025</td></tr>
       </table>
+      </div>
       <div class="hinweis">
         ℹ️ <b>Fristigkeit</b> (kurz/lang) ist optional und wird für langfristiges Fremdkapital verwendet.<br>
         ℹ️ Zeilen mit Kategorie <b>Zusatzangaben</b> in der GuV (Tilgung, Entnahmen und Ausschüttungen,
@@ -259,54 +387,6 @@
         Sie zählen nicht zum Jahresergebnis.
       </div>
     </div>
-
-    <!-- RECHTS: Upload-Bereich -->
-    <div class="upload-seite">
-      <div>
-        <label style="display:block; font-weight:bold; margin-bottom:8px;">📊 Bilanz hochladen</label>
-        <div class="upload-zone" id="dropzone-bilanz">
-          <p>Drag &amp; Drop oder Datei wählen</p>
-          <input type="file" id="csvBilanz" accept=".csv" multiple>
-          <div class="upload-status" id="status-bilanz"></div>
-        </div>
-      </div>
-
-      <div>
-        <label style="display:block; font-weight:bold; margin-bottom:8px;">📈 GuV hochladen</label>
-        <div class="upload-zone" id="dropzone-guv">
-          <p>Drag &amp; Drop oder Datei wählen</p>
-          <input type="file" id="csvGuV" accept=".csv" multiple>
-          <div class="upload-status" id="status-guv"></div>
-        </div>
-      </div>
-
-      <div id="data-bilanz" style="display:none"></div>
-      <div id="data-guv" style="display:none"></div>
-
-      <button id="startButton" py-click="Finanzanalyse_starten">Finanzanalyse starten</button>
-      <div id="loader">⏳ Analyse läuft...</div>
-
-      <div style="margin-top:20px;">
-        <label style="display:block; font-weight:bold; margin-bottom:8px;">Zu welcher Branche gehört das Unternehmen?</label>
-        <select id="branche" style="width:100%; padding:10px; font-size:15px; border-radius:6px; border:1px solid #4a90e2; background:#1a2a3a; color:#e8eef6;">
-          <option value="">-- Bitte wählen --</option>
-          <option value="tech">Tech</option>
-          <option value="mittelstand">Mittelstand</option>
-          <option value="industrie">Industrie</option>
-          <option value="immobilien">Immobilien</option>
-          <option value="banken">Banken</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ergebnisse -->
-  <div class="ergebnis-bereich">
-    <h3>Upload-Protokoll:</h3>
-    <pre id="upload-log"></pre>
-
-    <h3>Analyseergebnis:</h3>
-    <pre id="output"></pre>
   </div>
 
   <script>
@@ -376,7 +456,7 @@
 
     // Lädt eine Beispieldatei vom Server und legt sie ins passende Upload-Feld
     async function ladeBeispiel(datei, dataId, statusId) {
-      const antwort = await fetch(datei + "?v=46");
+      const antwort = await fetch(datei + "?v=47");
       if (!antwort.ok) {
         alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
         return;
@@ -414,8 +494,8 @@
   </script>
 
   <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
-  <script type="py" src="app.py?v=46"></script>
+  <script type="py" src="app.py?v=47"></script>
 
-  <div id="version">v46</div>
+  <div id="version">v47</div>
 </body>
 </html>
