@@ -30,7 +30,7 @@ import json
 # ============================================================
 
 # Bei jeder neuen Version erhöhen (auch in index.html), damit Browser keine alten Dateien aus dem Cache laden
-VERSION = "47"
+VERSION = "48"
 
 
 # ============================================================
