@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=48">
+  <link rel="stylesheet" href="index.css?v=49">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -29,7 +29,6 @@
       margin-bottom: 8px;
     }
 
-    /* Auf schmalen Bildschirmen kann man die Beispieltabellen seitlich wischen */
     .tabelle-scroll {
       overflow-x: auto;
       margin-bottom: 20px;
@@ -126,12 +125,10 @@
       text-align: center;
     }
 
-    /* Leere Ausgabe-Felder nicht anzeigen */
     pre:empty {
       display: none;
     }
 
-    /* Die 3 Schritte links */
     .schritt {
       background: #1a2a3a;
       border: 1px solid #2f4f72;
@@ -261,10 +258,8 @@
 
   <div class="main-layout">
 
-    <!-- ===== LINKS: Analyse in 3 Schritten ===== -->
     <div class="upload-seite">
 
-      <!-- Schritt 1: Dateien -->
       <div class="schritt">
         <h2 class="schritt-titel"><span class="schritt-nr">1</span> Dateien hochladen</h2>
 
@@ -285,12 +280,10 @@
         <p class="oder">… oder zum Ausprobieren:</p>
         <button type="button" class="download-button" id="beispielLaden">▶ Beispieldaten 2024–2026 laden</button>
 
-        <!-- Hier speichert die Seite den Inhalt der hochgeladenen Dateien (unsichtbar) -->
         <div id="data-bilanz" style="display:none"></div>
         <div id="data-guv" style="display:none"></div>
       </div>
 
-      <!-- Schritt 2: Branche -->
       <div class="schritt">
         <h2 class="schritt-titel"><span class="schritt-nr">2</span> Branche wählen</h2>
         <select id="branche">
@@ -303,7 +296,6 @@
         </select>
       </div>
 
-      <!-- Schritt 3: Start -->
       <div class="schritt">
         <h2 class="schritt-titel"><span class="schritt-nr">3</span> Analyse starten</h2>
         <button id="startButton">Finanzanalyse starten</button>
@@ -316,7 +308,6 @@
       </div>
     </div>
 
-    <!-- ===== RECHTS: So müssen die Dateien aussehen ===== -->
     <div class="beispiel-seite">
       <div class="hinweis">
         📋 So müssen eure CSV-Dateien aufgebaut sein (Semikolon-getrennt).
@@ -454,11 +445,8 @@
     setupDropzone("dropzone-bilanz", "csvBilanz", "status-bilanz", "data-bilanz");
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
 
-    // ===== Beispieldaten =====
-
-    // Lädt eine Beispieldatei vom Server und legt sie ins passende Upload-Feld
     async function ladeBeispiel(datei, dataId, statusId) {
-      const antwort = await fetch(datei + "?v=48");
+      const antwort = await fetch(datei + "?v=49");
       if (!antwort.ok) {
         alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
         return;
@@ -469,13 +457,11 @@
       logMessage("✅ Beispiel geladen: " + datei);
     }
 
-    // Button "Beispieldaten direkt laden": beide Dateien laden, ohne Download
     document.getElementById("beispielLaden").addEventListener("click", function () {
       ladeBeispiel("beispiel_bilanz.csv", "data-bilanz", "status-bilanz");
       ladeBeispiel("beispiel_guv.csv", "data-guv", "status-guv");
     });
 
-    // Startet den Download einer Datei (wie ein Klick auf einen Download-Link)
     function starteDownload(datei) {
       const link = document.createElement("a");
       link.href = datei;
@@ -485,19 +471,16 @@
       link.remove();
     }
 
-    // Button "Bilanz + GuV herunterladen": beide Dateien nacheinander herunterladen
     document.getElementById("beispielHerunterladen").addEventListener("click", function () {
       starteDownload("beispiel_bilanz.csv");
-      // Kurz warten, sonst blockieren manche Browser den zweiten Download
       setTimeout(function () {
         starteDownload("beispiel_guv.csv");
       }, 500);
     });
   </script>
 
-  <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
-  <script type="py" src="app.py?v=48"></script>
+  <script type="py" src="app.py?v=49"></script>
 
-  <div id="version">v48</div>
+  <div id="version">v49</div>
 </body>
 </html>
