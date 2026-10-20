@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=47">
+  <link rel="stylesheet" href="index.css?v=48">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -320,7 +320,7 @@
     <div class="beispiel-seite">
       <div class="hinweis">
         📋 So müssen eure CSV-Dateien aufgebaut sein (Semikolon-getrennt).
-        Das Beispiel enthält die Geschäftsjahre 2024, 2025 und 2026.
+        Das Beispiel enthält die Geschäftsjahre 2024, 2025 und 2026 (unten gezeigt: 2026). Es zeigt ein Unternehmen, das 2024 in der Krise steckt, sich 2025 erholt und 2026 gut dasteht.
       </div>
 
       <div class="download-box">
@@ -345,16 +345,18 @@
           <th>GJ</th>
           <th>Fristigkeit</th>
         </tr>
-        <tr><td>Grundstücke und Gebäude</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>450.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
-        <tr><td>Maschinen</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>180.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
-        <tr><td>Vorräte</td><td>Umlaufvermögen</td><td>Vorräte</td><td>120.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
-        <tr><td>Forderungen aus LuL</td><td>Umlaufvermögen</td><td>Forderungen</td><td>95.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
-        <tr><td>Bankguthaben</td><td>Umlaufvermögen</td><td>Liquide Mittel</td><td>175.000</td><td>Aktiva</td><td>2025</td><td></td></tr>
-        <tr><td>Gezeichnetes Kapital</td><td>Eigenkapital</td><td>Stammkapital</td><td>100.000</td><td>Passiva</td><td>2025</td><td></td></tr>
-        <tr><td>Jahresüberschuss</td><td>Eigenkapital</td><td>Jahresüberschuss</td><td>218.000</td><td>Passiva</td><td>2025</td><td></td></tr>
-        <tr><td>Sonstige Rückstellungen</td><td>Rückstellungen</td><td>Sonstige Rückstellungen</td><td>50.000</td><td>Passiva</td><td>2025</td><td>kurz</td></tr>
-        <tr><td>Bankdarlehen</td><td>Verbindlichkeiten</td><td>Bankdarlehen</td><td>300.000</td><td>Passiva</td><td>2025</td><td>lang</td></tr>
-        <tr><td>Verbindl. aus LuL</td><td>Verbindlichkeiten</td><td>Lieferanten</td><td>95.000</td><td>Passiva</td><td>2025</td><td>kurz</td></tr>
+        <tr><td>Grundstücke und Gebäude</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>450.000</td><td>Aktiva</td><td>2026</td><td></td></tr>
+        <tr><td>Technische Anlagen und Maschinen</td><td>Anlagevermögen</td><td>Sachanlagen</td><td>455.000</td><td>Aktiva</td><td>2026</td><td></td></tr>
+        <tr><td>Vorräte</td><td>Umlaufvermögen</td><td>Vorräte</td><td>360.000</td><td>Aktiva</td><td>2026</td><td></td></tr>
+        <tr><td>Forderungen aus LuL</td><td>Umlaufvermögen</td><td>Forderungen</td><td>260.000</td><td>Aktiva</td><td>2026</td><td></td></tr>
+        <tr><td>Bankguthaben</td><td>Umlaufvermögen</td><td>Liquide Mittel</td><td>117.000</td><td>Aktiva</td><td>2026</td><td></td></tr>
+        <tr><td>Gezeichnetes Kapital</td><td>Eigenkapital</td><td>Stammkapital</td><td>100.000</td><td>Passiva</td><td>2026</td><td></td></tr>
+        <tr><td>Gewinnrücklagen</td><td>Eigenkapital</td><td>Gewinnrücklagen</td><td>151.000</td><td>Passiva</td><td>2026</td><td></td></tr>
+        <tr><td>Jahresüberschuss</td><td>Eigenkapital</td><td>Jahresüberschuss</td><td>156.000</td><td>Passiva</td><td>2026</td><td></td></tr>
+        <tr><td>Sonstige Rückstellungen</td><td>Rückstellungen</td><td>Sonstige Rückstellungen</td><td>85.000</td><td>Passiva</td><td>2026</td><td>kurz</td></tr>
+        <tr><td>Bankdarlehen</td><td>Verbindlichkeiten</td><td>Bankdarlehen</td><td>750.000</td><td>Passiva</td><td>2026</td><td>lang</td></tr>
+        <tr><td>Verbindl. aus LuL</td><td>Verbindlichkeiten</td><td>Lieferanten</td><td>280.000</td><td>Passiva</td><td>2026</td><td>kurz</td></tr>
+        <tr><td>Sonstige Verbindlichkeiten</td><td>Verbindlichkeiten</td><td>Sonstige</td><td>120.000</td><td>Passiva</td><td>2026</td><td>kurz</td></tr>
       </table>
       </div>
 
@@ -367,17 +369,17 @@
           <th>Betrag_EUR</th>
           <th>GJ</th>
         </tr>
-        <tr><td>Umsatzerlöse</td><td>Erträge</td><td>1.200.000</td><td>2025</td></tr>
-        <tr><td>Sonstige Erträge</td><td>Erträge</td><td>45.000</td><td>2025</td></tr>
-        <tr><td>Materialaufwand</td><td>Aufwendungen</td><td>480.000</td><td>2025</td></tr>
-        <tr><td>Personalaufwand</td><td>Aufwendungen</td><td>350.000</td><td>2025</td></tr>
-        <tr><td>Abschreibungen</td><td>Aufwendungen</td><td>85.000</td><td>2025</td></tr>
-        <tr><td>Zinsaufwand</td><td>Aufwendungen</td><td>18.000</td><td>2025</td></tr>
-        <tr><td>Steuern</td><td>Aufwendungen</td><td>62.000</td><td>2025</td></tr>
-        <tr><td>Sonstige Aufwendungen</td><td>Aufwendungen</td><td>32.000</td><td>2025</td></tr>
-        <tr><td>Tilgung</td><td>Zusatzangaben</td><td>45.000</td><td>2025</td></tr>
-        <tr><td>Entnahmen und Ausschüttungen</td><td>Zusatzangaben</td><td>127.000</td><td>2025</td></tr>
-        <tr><td>Betriebsnotwendige Investitionen</td><td>Zusatzangaben</td><td>135.000</td><td>2025</td></tr>
+        <tr><td>Umsatzerlöse</td><td>Erträge</td><td>2.400.000</td><td>2026</td></tr>
+        <tr><td>Sonstige Erträge</td><td>Erträge</td><td>25.000</td><td>2026</td></tr>
+        <tr><td>Materialaufwand</td><td>Aufwendungen</td><td>1.080.000</td><td>2026</td></tr>
+        <tr><td>Personalaufwand</td><td>Aufwendungen</td><td>860.000</td><td>2026</td></tr>
+        <tr><td>Abschreibungen</td><td>Aufwendungen</td><td>100.000</td><td>2026</td></tr>
+        <tr><td>Zinsaufwand</td><td>Aufwendungen</td><td>38.000</td><td>2026</td></tr>
+        <tr><td>Steuern</td><td>Aufwendungen</td><td>66.000</td><td>2026</td></tr>
+        <tr><td>Sonstige Aufwendungen</td><td>Aufwendungen</td><td>125.000</td><td>2026</td></tr>
+        <tr><td>Tilgung</td><td>Zusatzangaben</td><td>80.000</td><td>2026</td></tr>
+        <tr><td>Entnahmen und Ausschüttungen</td><td>Zusatzangaben</td><td>50.000</td><td>2026</td></tr>
+        <tr><td>Betriebsnotwendige Investitionen</td><td>Zusatzangaben</td><td>80.000</td><td>2026</td></tr>
       </table>
       </div>
       <div class="hinweis">
@@ -456,7 +458,7 @@
 
     // Lädt eine Beispieldatei vom Server und legt sie ins passende Upload-Feld
     async function ladeBeispiel(datei, dataId, statusId) {
-      const antwort = await fetch(datei + "?v=47");
+      const antwort = await fetch(datei + "?v=48");
       if (!antwort.ok) {
         alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
         return;
@@ -494,8 +496,8 @@
   </script>
 
   <!-- ?v=… bei jeder neuen Version erhöhen, damit Browser keine alte app.py aus dem Cache laden -->
-  <script type="py" src="app.py?v=47"></script>
+  <script type="py" src="app.py?v=48"></script>
 
-  <div id="version">v47</div>
+  <div id="version">v48</div>
 </body>
 </html>
