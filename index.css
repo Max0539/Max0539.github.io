@@ -1,4 +1,3 @@
-/* ── Dark navy base with layered wave gradients ── */
 html {
   min-height: 100%;
 }
@@ -10,7 +9,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Wave layer 1 – broad sweep from top-left */
 body::before {
   content: "";
   position: fixed;
@@ -23,7 +21,6 @@ body::before {
   pointer-events: none;
 }
 
-/* Wave layer 2 – softer mid-tones for depth */
 body::after {
   content: "";
   position: fixed;
@@ -36,7 +33,6 @@ body::after {
   pointer-events: none;
 }
 
-/* ── UI component overrides for dark theme ── */
 .upload-zone {
   background-color: rgba(10, 30, 58, 0.75);
   border-color: #2a6db5;

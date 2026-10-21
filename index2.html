@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse – Ergebnis</title>
-  <link rel="stylesheet" href="index.css?v=51">
+  <link rel="stylesheet" href="index.css?v=52">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
   <style>
     body {
@@ -619,12 +619,18 @@
     }
 
     const parameter = new URLSearchParams(window.location.search);
-    const branche = (parameter.get("branche") || "").trim().toLowerCase();
+    let branche = "";
+    if (parameter.get("branche")) {
+      branche = parameter.get("branche").trim().toLowerCase();
+    }
 
     let ergebnisse = [];
     try {
-      ergebnisse = JSON.parse(parameter.get("results") || "[]");
+      ergebnisse = JSON.parse(parameter.get("results"));
     } catch (fehler) {
+      ergebnisse = [];
+    }
+    if (!Array.isArray(ergebnisse)) {
       ergebnisse = [];
     }
 
@@ -658,17 +664,19 @@
       return zahlDe(wert, 2);
     }
 
-    function schwellenFuer(meta) {
-      const eigene = BRANCHEN_SCHWELLEN[branche];
-      if (eigene && meta.id in eigene) {
-        return eigene[meta.id];
-      }
-      return meta.schwellen;
-    }
-
     function istBranchenwert(meta) {
       const eigene = BRANCHEN_SCHWELLEN[branche];
-      return Boolean(eigene && meta.id in eigene);
+      if (eigene === undefined) {
+        return false;
+      }
+      return meta.id in eigene;
+    }
+
+    function schwellenFuer(meta) {
+      if (istBranchenwert(meta)) {
+        return BRANCHEN_SCHWELLEN[branche][meta.id];
+      }
+      return meta.schwellen;
     }
 
     function bewerteKennzahl(meta, ergebnis) {
@@ -1071,9 +1079,14 @@
       const punkteStabilitaet = stabilitaetPunkte(schwankung);
       const punkteGesamt = punkteWachstum * profil.cagrGewicht + punkteStabilitaet * profil.stabilGewicht;
 
+      let cagrText = "–";
+      if (cagrProzent !== null) {
+        cagrText = zahlDe(cagrProzent, 1) + " %";
+      }
+
       const tabelle = neueTabelle(["Kennzahl", "Wert", "Punkte"]);
       const zeilen = [
-        ["Ø Umsatzwachstum pro Jahr (CAGR)", cagrProzent === null ? "–" : zahlDe(cagrProzent, 1) + " %", punkteWachstum + " / 10"],
+        ["Ø Umsatzwachstum pro Jahr (CAGR)", cagrText, punkteWachstum + " / 10"],
         ["Schwankung des Wachstums", zahlDe(schwankung, 1) + " %-Pkt.", punkteStabilitaet + " / 10"]
       ];
       for (const zeileInfo of zeilen) {
@@ -1231,7 +1244,10 @@
     }
 
     function zeichneScoreDiagramm() {
-      const saeulen = Object.keys(SAEULEN_GEWICHTE);
+      const saeulen = [];
+      for (const saeule in SAEULEN_GEWICHTE) {
+        saeulen.push(saeule);
+      }
       const blautoene = ["#2b5d8f", "#3a78b8", "#4a90e2", "#7db9f0", "#a8d1f7"];
 
       const datensaetze = [];
@@ -1241,7 +1257,11 @@
         for (const saeule of saeulen) {
           scores.push(berechneSaeulenScore(eintrag, saeule));
         }
-        const farbe = blautoene[blautoene.length - ergebnisse.length + i] || FARBE_BLAU;
+        let farbe = FARBE_BLAU;
+        const farbNummer = blautoene.length - ergebnisse.length + i;
+        if (farbNummer >= 0) {
+          farbe = blautoene[farbNummer];
+        }
         datensaetze.push({ label: "GJ " + eintrag.gj, data: scores, backgroundColor: farbe });
       }
 

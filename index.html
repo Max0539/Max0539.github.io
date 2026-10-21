@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanzanalyse</title>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
-  <link rel="stylesheet" href="index.css?v=51">
+  <link rel="stylesheet" href="index.css?v=52">
   <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
 
   <style>
@@ -413,7 +413,8 @@
             combined = text;
           } else {
             const zeilen = text.split("\n");
-            combined += "\n" + zeilen.slice(1).join("\n");
+            zeilen.shift();
+            combined = combined + "\n" + zeilen.join("\n");
           }
 
           names.push(file.name);
@@ -426,21 +427,25 @@
         }
       }
 
-      input.addEventListener("change", (e) => {
-        if (e.target.files.length > 0) handleFiles(e.target.files);
+      input.addEventListener("change", function (event) {
+        if (event.target.files.length > 0) {
+          handleFiles(event.target.files);
+        }
       });
 
-      zone.addEventListener("dragover", (e) => {
-        e.preventDefault();
+      zone.addEventListener("dragover", function (event) {
+        event.preventDefault();
         zone.classList.add("dragover");
       });
 
-      zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
-
-      zone.addEventListener("drop", (e) => {
-        e.preventDefault();
+      zone.addEventListener("dragleave", function () {
         zone.classList.remove("dragover");
-        handleFiles(e.dataTransfer.files);
+      });
+
+      zone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        zone.classList.remove("dragover");
+        handleFiles(event.dataTransfer.files);
       });
     }
 
@@ -448,7 +453,7 @@
     setupDropzone("dropzone-guv", "csvGuV", "status-guv", "data-guv");
 
     async function ladeBeispiel(datei, dataId, statusId) {
-      const antwort = await fetch(datei + "?v=51");
+      const antwort = await fetch(datei + "?v=52");
       if (!antwort.ok) {
         alert("Beispieldatei " + datei + " konnte nicht geladen werden.");
         return;
@@ -481,8 +486,8 @@
     });
   </script>
 
-  <script type="py" src="app.py?v=51"></script>
+  <script type="py" src="app.py?v=52"></script>
 
-  <div id="version">v51</div>
+  <div id="version">v52</div>
 </body>
 </html>
