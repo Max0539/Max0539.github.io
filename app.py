@@ -3,18 +3,22 @@ import csv
 import json
 
 
-VERSION = "51"
+VERSION = "52"
+
+JAHR_SPALTEN = ["GJ", "Geschaeftsjahr", "Geschäftsjahr"]
+SEITE_SPALTEN = ["Seite", "seite", "SollHaben", "Soll/Haben"]
+BILANZ_PFLICHT = ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"]
+GUV_PFLICHT = ["position", "Kategorie", "Betrag_EUR"]
 
 
 def parse_csv(text):
-    inhalt = (text or "").strip().lstrip("\ufeff")
-    if not inhalt:
+    inhalt = (text or "").strip().lstrip("﻿")
+    if inhalt == "":
         return []
 
     reader = csv.DictReader(inhalt.splitlines(), delimiter=";")
     if reader.fieldnames:
         reader.fieldnames = [name.strip() for name in reader.fieldnames]
-
     return list(reader)
 
 
@@ -24,10 +28,7 @@ def parse_betrag(wert):
     text = text.replace("'", "")
 
     if "," in text and "." in text:
-        letztes_komma = text.rfind(",")
-        letzter_punkt = text.rfind(".")
-
-        if letztes_komma > letzter_punkt:
+        if text.rfind(",") > text.rfind("."):
             text = text.replace(".", "")
             text = text.replace(",", ".")
         else:
@@ -41,60 +42,55 @@ def parse_betrag(wert):
         return 0.0
 
 
-def text_klein(zeile, feld):
-    return (zeile.get(feld, "") or "").strip().lower()
+def normalisiere(text):
+    text = (text or "").strip().lower()
+    text = text.replace("ä", "ae")
+    text = text.replace("ö", "oe")
+    text = text.replace("ü", "ue")
+    text = text.replace("ß", "ss")
+    return text
 
 
-def normalisiere_text(text):
-    t = (text or "").strip().lower()
-    t = t.replace("ä", "ae")
-    t = t.replace("ö", "oe")
-    t = t.replace("ü", "ue")
-    t = t.replace("ß", "ss")
-    return t
+def feld(zeile, spalte):
+    return normalisiere(zeile.get(spalte, ""))
 
 
-def hole_gj_wert(zeile):
-    gj = (zeile.get("GJ", "") or "").strip()
-    if gj:
-        return gj
-
-    gj = (zeile.get("Geschaeftsjahr", "") or "").strip()
-    if gj:
-        return gj
-
-    gj = (zeile.get("Geschäftsjahr", "") or "").strip()
-    return gj
-
-
-def hat_jahr_spalte(daten):
-    if not daten:
-        return False
-
-    spalten = list(daten[0].keys())
-    if "GJ" in spalten:
-        return True
-    if "Geschaeftsjahr" in spalten:
-        return True
-    if "Geschäftsjahr" in spalten:
-        return True
+def enthaelt(text, woerter):
+    for wort in woerter:
+        if wort in text:
+            return True
     return False
 
 
-def lade_und_filtere_nach_jahr(daten, jahr):
-    gefiltert = []
+def hole_jahr(zeile):
+    for spalte in JAHR_SPALTEN:
+        wert = (zeile.get(spalte) or "").strip()
+        if wert != "":
+            return wert
+    return ""
+
+
+def hat_jahr_spalte(daten):
+    for spalte in JAHR_SPALTEN:
+        if spalte in daten[0]:
+            return True
+    return False
+
+
+def zeilen_fuer_jahr(daten, jahr):
+    ergebnis = []
     for zeile in daten:
-        if hole_gj_wert(zeile) == str(jahr):
-            gefiltert.append(zeile)
-    return gefiltert
+        if hole_jahr(zeile) == jahr:
+            ergebnis.append(zeile)
+    return ergebnis
 
 
-def hole_gj_liste(daten):
+def alle_jahre(daten):
     jahre = []
     for zeile in daten:
-        gj = hole_gj_wert(zeile)
-        if gj and gj not in jahre:
-            jahre.append(gj)
+        jahr = hole_jahr(zeile)
+        if jahr != "" and jahr not in jahre:
+            jahre.append(jahr)
     jahre.sort(reverse=True)
     return jahre
 
@@ -106,8 +102,8 @@ def vorjahr_von(jahr):
 
 
 def pruefe_eingaben(bilanz_text, guv_text):
-    hat_bilanz = bool((bilanz_text or "").strip())
-    hat_guv = bool((guv_text or "").strip())
+    hat_bilanz = (bilanz_text or "").strip() != ""
+    hat_guv = (guv_text or "").strip() != ""
 
     if not hat_bilanz and not hat_guv:
         return "⚠️ Bitte Bilanz- und GuV-Datei hochladen."
@@ -118,49 +114,32 @@ def pruefe_eingaben(bilanz_text, guv_text):
     return None
 
 
-def pruefe_pflicht_spalten(daten, pflicht_spalten, name):
-    spalten = list(daten[0].keys()) if daten else []
+def fehlende_spalten(daten, pflicht_spalten):
     fehlende = []
-
     for spalte in pflicht_spalten:
-        if spalte not in spalten:
+        if spalte not in daten[0]:
             fehlende.append(spalte)
-
-    if fehlende:
-        return False, f"{name} FEHLER: Spalten fehlen: {', '.join(fehlende)}"
-    return True, f"{name} OK"
+    return fehlende
 
 
-def pruefe_bilanzsumme_fuer_jahr(bilanz_jahr, toleranz=0.01):
+def bilanz_geht_auf(bilanz_jahr):
     aktiva = 0.0
     passiva = 0.0
-
     for zeile in bilanz_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = text_klein(zeile, "Seite")
-
-        if seite == "aktiva":
+        betrag = parse_betrag(zeile.get("Betrag_EUR"))
+        if feld(zeile, "Seite") == "aktiva":
             aktiva += betrag
-        elif seite == "passiva":
+        elif feld(zeile, "Seite") == "passiva":
             passiva += betrag
-
-    if abs(aktiva - passiva) > toleranz:
-        return False
-    return True
+    return abs(aktiva - passiva) <= 0.01
 
 
 def ist_lul(text):
-    if "lul" in text:
-        return True
-    if "l+l" in text:
-        return True
-    if "lieferungen und leistungen" in text:
-        return True
-    return False
+    return enthaelt(text, ["lul", "l+l", "lieferungen und leistungen"])
 
 
 def sammle_bilanz_posten(bilanz_jahr):
-    posten = {
+    p = {
         "bilanzsumme": 0.0,
         "eigenkapital": 0.0,
         "fremdkapital": 0.0,
@@ -179,111 +158,110 @@ def sammle_bilanz_posten(bilanz_jahr):
     }
 
     for zeile in bilanz_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = text_klein(zeile, "Seite")
-        kategorie = normalisiere_text(zeile.get("Kategorie", ""))
-        unterkategorie = normalisiere_text(zeile.get("Unterkategorie", ""))
-        position = normalisiere_text(zeile.get("Bilanzposition", ""))
-        fristigkeit = normalisiere_text(zeile.get("Fristigkeit", "") or "")
+        betrag = parse_betrag(zeile.get("Betrag_EUR"))
+        seite = feld(zeile, "Seite")
+        kategorie = feld(zeile, "Kategorie")
+        unterkategorie = feld(zeile, "Unterkategorie")
+        position = feld(zeile, "Bilanzposition")
+        fristigkeit = feld(zeile, "Fristigkeit")
 
         if seite == "aktiva":
-            posten["bilanzsumme"] += betrag
+            p["bilanzsumme"] += betrag
 
-            if "anlageverm" in kategorie or "finanzanlage" in kategorie:
-                posten["anlagevermoegen"] += betrag
-
+            if enthaelt(kategorie, ["anlageverm", "finanzanlage"]):
+                p["anlagevermoegen"] += betrag
             elif "umlaufverm" in kategorie:
-                posten["umlaufvermoegen"] += betrag
-
-                if "liquide mittel" in unterkategorie:
-                    posten["liquide_mittel"] += betrag
+                p["umlaufvermoegen"] += betrag
+                if "liquide" in unterkategorie or enthaelt(position, ["kasse", "bankguthaben", "guthaben bei kreditinstituten"]):
+                    p["liquide_mittel"] += betrag
                 if "vorraete" in unterkategorie or "vorraete" in position:
-                    posten["vorraete"] += betrag
+                    p["vorraete"] += betrag
                 if "forderung" in unterkategorie:
-                    posten["forderungen"] += betrag
+                    p["forderungen"] += betrag
                     if ist_lul(position):
-                        posten["forderungen_lul"] += betrag
+                        p["forderungen_lul"] += betrag
 
         elif seite == "passiva":
             if kategorie == "eigenkapital":
-                posten["eigenkapital"] += betrag
+                p["eigenkapital"] += betrag
                 continue
 
-            posten["fremdkapital"] += betrag
-            ist_langfristig = False
+            p["fremdkapital"] += betrag
+            langfristig = False
 
             if "rueckstellung" in kategorie:
-                posten["rueckstellungen"] += betrag
+                p["rueckstellungen"] += betrag
                 if "pension" in unterkategorie or "pension" in position:
-                    ist_langfristig = True
+                    langfristig = True
 
             if "verbindlichkeit" in kategorie:
-                posten["verbindlichkeiten"] += betrag
-
-                ist_bank = False
-                if "bank" in unterkategorie or "bank" in position or "kreditinstitut" in position:
-                    ist_bank = True
-
-                ist_darlehen = False
-                if "darlehen" in unterkategorie or "darlehen" in position or "anleihe" in position:
-                    ist_darlehen = True
+                p["verbindlichkeiten"] += betrag
+                ist_bank = "bank" in unterkategorie or enthaelt(position, ["bank", "kreditinstitut"])
+                ist_darlehen = "darlehen" in unterkategorie or enthaelt(position, ["darlehen", "anleihe"])
 
                 if ist_bank:
-                    posten["bankverbindlichkeiten"] += betrag
+                    p["bankverbindlichkeiten"] += betrag
                 if ist_bank or ist_darlehen:
-                    posten["finanzverbindlichkeiten"] += betrag
-                    ist_langfristig = True
+                    p["finanzverbindlichkeiten"] += betrag
+                    langfristig = True
                 if "lieferant" in unterkategorie or ist_lul(position):
-                    posten["verbindlichkeiten_lul"] += betrag
+                    p["verbindlichkeiten_lul"] += betrag
 
             if fristigkeit != "":
-                ist_langfristig = "lang" in fristigkeit
+                langfristig = "lang" in fristigkeit
+            if langfristig:
+                p["langfr_fk"] += betrag
 
-            if ist_langfristig:
-                posten["langfr_fk"] += betrag
+    if p["forderungen_lul"] == 0:
+        p["forderungen_lul"] = p["forderungen"]
 
-    if posten["forderungen_lul"] == 0:
-        posten["forderungen_lul"] = posten["forderungen"]
-
-    posten["kurzfr_fk"] = posten["fremdkapital"] - posten["langfr_fk"]
-    return posten
+    p["kurzfr_fk"] = p["fremdkapital"] - p["langfr_fk"]
+    return p
 
 
 def ist_zusatzangabe(zeile):
-    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
-    return "zusatz" in kategorie
+    return "zusatz" in feld(zeile, "Kategorie")
 
 
-def hole_guv_seite(zeile):
+def guv_seite(zeile):
     if ist_zusatzangabe(zeile):
         return ""
 
-    seite = normalisiere_text(zeile.get("Seite", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("seite", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("SollHaben", "") or "")
-    if not seite:
-        seite = normalisiere_text(zeile.get("Soll/Haben", "") or "")
+    seite = ""
+    for spalte in SEITE_SPALTEN:
+        if seite == "":
+            seite = feld(zeile, spalte)
 
     if seite in ["haben", "habenseite", "h"]:
         return "haben"
     if seite in ["soll", "sollseite", "s"]:
         return "soll"
 
-    kategorie = normalisiere_text(zeile.get("Kategorie", ""))
-    position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
-
-    if "ertrag" in kategorie or "erloes" in kategorie or "umsatz" in position:
+    kategorie = feld(zeile, "Kategorie")
+    if enthaelt(kategorie, ["ertr", "erloes"]) or "umsatz" in guv_position(zeile):
         return "haben"
-    if "aufwand" in kategorie or "kosten" in kategorie:
+    if enthaelt(kategorie, ["aufw", "kosten"]):
         return "soll"
-
     return ""
 
 
+def guv_position(zeile):
+    position = feld(zeile, "position")
+    if position == "":
+        position = feld(zeile, "Position")
+    return position
+
+
+def ist_ertragsteuer(position):
+    if position == "steuern":
+        return True
+    if "steuer" not in position:
+        return False
+    return enthaelt(position, ["einkommen", "ertrag", "koerperschaft", "gewerbesteuer"])
+
+
 def sammle_guv_posten(guv_jahr):
-    posten = {
+    p = {
         "ertraege": 0.0,
         "aufwendungen": 0.0,
         "umsatz": 0.0,
@@ -294,77 +272,67 @@ def sammle_guv_posten(guv_jahr):
         "abschreibungen": 0.0,
         "zinsaufwand": 0.0,
         "steuern": 0.0,
+        "tilgung": None,
+        "entnahmen": None,
+        "investitionen": None,
     }
 
-    tilgung = None
-    entnahmen = None
-    investitionen = None
-
     for zeile in guv_jahr:
-        betrag = parse_betrag(zeile.get("Betrag_EUR", "0"))
-        seite = hole_guv_seite(zeile)
-        position = normalisiere_text(zeile.get("position", "") or zeile.get("Position", ""))
+        betrag = parse_betrag(zeile.get("Betrag_EUR"))
+        position = guv_position(zeile)
+        seite = guv_seite(zeile)
 
         if ist_zusatzangabe(zeile):
+            schluessel = ""
             if "tilgung" in position:
-                if tilgung is None:
-                    tilgung = 0.0
-                tilgung += betrag
-            elif "entnahme" in position or "ausschuettung" in position:
-                if entnahmen is None:
-                    entnahmen = 0.0
-                entnahmen += betrag
+                schluessel = "tilgung"
+            elif enthaelt(position, ["entnahme", "ausschuettung"]):
+                schluessel = "entnahmen"
             elif "investition" in position:
-                if investitionen is None:
-                    investitionen = 0.0
-                investitionen += betrag
-            continue
+                schluessel = "investitionen"
 
-        if seite == "haben":
-            posten["ertraege"] += betrag
+            if schluessel != "":
+                if p[schluessel] is None:
+                    p[schluessel] = 0.0
+                p[schluessel] += betrag
+
+        elif seite == "haben":
+            p["ertraege"] += betrag
             if "umsatz" in position:
-                posten["umsatz"] += betrag
+                p["umsatz"] += betrag
             if "bestandsver" in position:
-                posten["bestandsveraenderung"] += betrag
+                p["bestandsveraenderung"] += betrag
             if "eigenleistung" in position:
-                posten["eigenleistungen"] += betrag
+                p["eigenleistungen"] += betrag
 
         elif seite == "soll":
-            posten["aufwendungen"] += betrag
+            p["aufwendungen"] += betrag
             if "bestandsver" in position:
-                posten["bestandsveraenderung"] -= betrag
-            elif "material" in position:
-                posten["materialaufwand"] += betrag
-            elif "personal" in position:
-                posten["personalaufwand"] += betrag
+                p["bestandsveraenderung"] -= betrag
+            elif enthaelt(position, ["material", "roh-", "hilfs- und betriebsstoffe", "bezogene waren", "bezogene leistungen", "wareneinsatz"]):
+                p["materialaufwand"] += betrag
+            elif enthaelt(position, ["personal", "loehne", "gehaelter", "soziale abgaben", "altersversorgung"]):
+                p["personalaufwand"] += betrag
             elif "abschreibung" in position:
-                posten["abschreibungen"] += betrag
+                p["abschreibungen"] += betrag
             elif "zins" in position:
-                posten["zinsaufwand"] += betrag
-            elif "steuer" in position and "sonstige steuer" not in position:
-                posten["steuern"] += betrag
+                p["zinsaufwand"] += betrag
+            elif ist_ertragsteuer(position):
+                p["steuern"] += betrag
 
-    if posten["umsatz"] == 0:
-        posten["umsatz"] = posten["ertraege"]
+    if p["umsatz"] == 0:
+        p["umsatz"] = p["ertraege"]
 
-    posten["tilgung"] = tilgung
-    posten["entnahmen"] = entnahmen
-    posten["investitionen"] = investitionen
-
-    posten["jahresueberschuss"] = posten["ertraege"] - posten["aufwendungen"]
-    posten["ebt"] = posten["jahresueberschuss"] + posten["steuern"]
-    posten["ebit"] = posten["ebt"] + posten["zinsaufwand"]
-    posten["ebitda"] = posten["ebit"] + posten["abschreibungen"]
-    posten["gesamtleistung"] = (
-        posten["umsatz"] + posten["bestandsveraenderung"] + posten["eigenleistungen"]
-    )
-    return posten
+    p["jahresueberschuss"] = p["ertraege"] - p["aufwendungen"]
+    p["ebt"] = p["jahresueberschuss"] + p["steuern"]
+    p["ebit"] = p["ebt"] + p["zinsaufwand"]
+    p["ebitda"] = p["ebit"] + p["abschreibungen"]
+    p["gesamtleistung"] = p["umsatz"] + p["bestandsveraenderung"] + p["eigenleistungen"]
+    return p
 
 
 def teile(zaehler, nenner):
-    if zaehler is None or nenner is None:
-        return None
-    if nenner == 0:
+    if zaehler is None or nenner is None or nenner == 0:
         return None
     return zaehler / nenner
 
@@ -376,10 +344,8 @@ def durchschnitt(aktuell, vorjahr):
 
 
 def kennzahl(wert, hinweis="", ampel=""):
-    eintrag = {}
-    if wert is None:
-        eintrag["wert"] = None
-    else:
+    eintrag = {"wert": None}
+    if wert is not None:
         eintrag["wert"] = round(wert, 6)
     if hinweis != "":
         eintrag["hinweis"] = hinweis
@@ -388,19 +354,19 @@ def kennzahl(wert, hinweis="", ampel=""):
     return eintrag
 
 
-def berechne_kennzahlen(bilanz, guv, bilanz_vorjahr=None, guv_vorjahr=None):
-    k = {}
+def berechne_cashflow(b, g, b_vorjahr):
+    cashflow = g["jahresueberschuss"] + g["abschreibungen"]
+    if b_vorjahr is None:
+        return cashflow, "Vereinfacht ohne Vorjahr (ohne Veränderung der Rückstellungen)"
+    cashflow = cashflow + b["rueckstellungen"] - b_vorjahr["rueckstellungen"]
+    return cashflow, ""
 
-    ek = bilanz["eigenkapital"]
-    bs = bilanz["bilanzsumme"]
-    fk = bilanz["fremdkapital"]
-    av = bilanz["anlagevermoegen"]
-    kurzfr_fk = bilanz["kurzfr_fk"]
-    liquide = bilanz["liquide_mittel"]
-    umsatz = guv["umsatz"]
-    gesamtleistung = guv["gesamtleistung"]
-    zins = guv["zinsaufwand"]
-    hat_vorjahr = bilanz_vorjahr is not None
+
+def kennzahlen_kapitalstruktur(b, k):
+    ek = b["eigenkapital"]
+    bs = b["bilanzsumme"]
+    fk = b["fremdkapital"]
+    av = b["anlagevermoegen"]
 
     k["K01"] = kennzahl(teile(ek, bs))
     k["K02"] = kennzahl(teile(fk, bs))
@@ -410,253 +376,238 @@ def berechne_kennzahlen(bilanz, guv, bilanz_vorjahr=None, guv_vorjahr=None):
         k["K03"] = kennzahl(None, "Eigenkapital ≤ 0", "rot")
     k["K04"] = kennzahl(teile(av, bs))
     k["K05"] = kennzahl(teile(ek, av))
-    k["K06"] = kennzahl(teile(ek + bilanz["langfr_fk"], av))
-    k["K07"] = kennzahl(teile(bilanz["bankverbindlichkeiten"], bs))
-    k["K08"] = kennzahl(teile(bilanz["finanzverbindlichkeiten"] - liquide, bs))
+    k["K06"] = kennzahl(teile(ek + b["langfr_fk"], av))
+    k["K07"] = kennzahl(teile(b["bankverbindlichkeiten"], bs))
+    k["K08"] = kennzahl(teile(b["finanzverbindlichkeiten"] - b["liquide_mittel"], bs))
 
-    k["R01"] = kennzahl(teile(guv["ebt"], gesamtleistung))
-    k["R02"] = kennzahl(teile(guv["ebt"] + zins, bs))
+
+def kennzahlen_rentabilitaet(b, g, g_vorjahr, k):
+    ek = b["eigenkapital"]
+    gesamtleistung = g["gesamtleistung"]
+
+    k["R01"] = kennzahl(teile(g["ebt"], gesamtleistung))
+    k["R02"] = kennzahl(teile(g["ebt"] + g["zinsaufwand"], b["bilanzsumme"]))
     if ek > 0:
-        k["R03"] = kennzahl(teile(guv["ebt"], ek))
+        k["R03"] = kennzahl(teile(g["ebt"], ek))
     else:
         k["R03"] = kennzahl(None, "Eigenkapital ≤ 0", "rot")
-    k["R04"] = kennzahl(teile(guv["ebitda"], umsatz))
-    k["R05"] = kennzahl(teile(guv["personalaufwand"], gesamtleistung))
-    k["R06"] = kennzahl(teile(guv["materialaufwand"], gesamtleistung))
-    if guv_vorjahr is not None and guv_vorjahr["umsatz"] > 0:
-        k["R07"] = kennzahl(umsatz / guv_vorjahr["umsatz"] - 1)
+    k["R04"] = kennzahl(teile(g["ebitda"], g["umsatz"]))
+    k["R05"] = kennzahl(teile(g["personalaufwand"], gesamtleistung))
+    k["R06"] = kennzahl(teile(g["materialaufwand"], gesamtleistung))
+
+    if g_vorjahr is not None and g_vorjahr["umsatz"] > 0:
+        k["R07"] = kennzahl(g["umsatz"] / g_vorjahr["umsatz"] - 1)
     else:
         k["R07"] = kennzahl(None, "Vorjahr fehlt")
 
-    cashflow = guv["jahresueberschuss"] + guv["abschreibungen"]
-    if hat_vorjahr:
-        cashflow = cashflow + bilanz["rueckstellungen"] - bilanz_vorjahr["rueckstellungen"]
-        cf_hinweis = ""
-    else:
-        cf_hinweis = "Vereinfacht ohne Vorjahr (ohne Veränderung der Rückstellungen)"
 
-    k["C01"] = kennzahl(cashflow, cf_hinweis)
-    k["C02"] = kennzahl(teile(cashflow, umsatz), cf_hinweis)
+def kennzahlen_cashflow(b, g, cashflow, hinweis, k):
+    zins = g["zinsaufwand"]
+    tilgung = g["tilgung"]
+
+    k["C01"] = kennzahl(cashflow, hinweis)
+    k["C02"] = kennzahl(teile(cashflow, g["umsatz"]), hinweis)
 
     if cashflow > 0:
-        netto_schulden = bilanz["verbindlichkeiten"] - liquide
-        if netto_schulden < 0:
-            netto_schulden = 0.0
-        k["C03"] = kennzahl(netto_schulden / cashflow, cf_hinweis)
+        netto_schulden = max(b["verbindlichkeiten"] - b["liquide_mittel"], 0.0)
+        k["C03"] = kennzahl(netto_schulden / cashflow, hinweis)
     else:
         k["C03"] = kennzahl(None, "Cashflow ≤ 0", "rot")
 
     if zins > 0:
-        k["C04"] = kennzahl(guv["ebit"] / zins)
+        k["C04"] = kennzahl(g["ebit"] / zins)
     else:
         k["C04"] = kennzahl(None, "Kein Zinsaufwand")
 
-    tilgung = guv["tilgung"]
-    entnahmen = guv["entnahmen"]
-    investitionen = guv["investitionen"]
-
     kapitaldienstgrenze = None
-    if entnahmen is None or investitionen is None:
+    if g["entnahmen"] is None or g["investitionen"] is None:
         k["C05"] = kennzahl(None, "Zusatzangaben Entnahmen/Ausschüttungen und Investitionen fehlen")
     else:
-        erweiterter_cashflow = cashflow + zins - entnahmen
-        kapitaldienstgrenze = erweiterter_cashflow - investitionen
+        kapitaldienstgrenze = cashflow + zins - g["entnahmen"] - g["investitionen"]
         if kapitaldienstgrenze <= 0:
-            k["C05"] = kennzahl(kapitaldienstgrenze, cf_hinweis, "rot")
+            k["C05"] = kennzahl(kapitaldienstgrenze, hinweis, "rot")
         else:
-            k["C05"] = kennzahl(kapitaldienstgrenze, cf_hinweis)
+            k["C05"] = kennzahl(kapitaldienstgrenze, hinweis)
 
     if kapitaldienstgrenze is None or tilgung is None:
         k["C06"] = kennzahl(None, "Zusatzangaben Tilgung, Entnahmen oder Investitionen fehlen")
     elif kapitaldienstgrenze <= 0:
         k["C06"] = kennzahl(None, "Kapitaldienstgrenze ≤ 0", "rot")
     else:
-        k["C06"] = kennzahl((zins + tilgung) / kapitaldienstgrenze, cf_hinweis)
+        k["C06"] = kennzahl((zins + tilgung) / kapitaldienstgrenze, hinweis)
 
     if tilgung is None:
         k["C07"] = kennzahl(None, "Zusatzangabe Tilgung fehlt")
     else:
-        k["C07"] = kennzahl(teile(cashflow + zins, zins + tilgung), cf_hinweis)
+        k["C07"] = kennzahl(teile(cashflow + zins, zins + tilgung), hinweis)
 
-    k["L01"] = kennzahl(teile(liquide, kurzfr_fk))
-    k["L02"] = kennzahl(teile(liquide + bilanz["forderungen"], kurzfr_fk))
-    k["L03"] = kennzahl(teile(bilanz["umlaufvermoegen"], kurzfr_fk))
-    k["L04"] = kennzahl(teile(bilanz["umlaufvermoegen"] - kurzfr_fk, umsatz))
 
-    if hat_vorjahr:
-        tage_hinweis = "Durchschnittsbestand mit Vorjahr"
-        forderungen = durchschnitt(bilanz["forderungen_lul"], bilanz_vorjahr["forderungen_lul"])
-        vorraete = durchschnitt(bilanz["vorraete"], bilanz_vorjahr["vorraete"])
-        verb_lul = durchschnitt(bilanz["verbindlichkeiten_lul"], bilanz_vorjahr["verbindlichkeiten_lul"])
+def kennzahlen_liquiditaet(b, g, b_vorjahr, k):
+    kurzfr_fk = b["kurzfr_fk"]
+    umsatz = g["umsatz"]
+
+    k["L01"] = kennzahl(teile(b["liquide_mittel"], kurzfr_fk))
+    k["L02"] = kennzahl(teile(b["liquide_mittel"] + b["forderungen"], kurzfr_fk))
+    k["L03"] = kennzahl(teile(b["umlaufvermoegen"], kurzfr_fk))
+    k["L04"] = kennzahl(teile(b["umlaufvermoegen"] - kurzfr_fk, umsatz))
+
+    if b_vorjahr is None:
+        hinweis = "Stichtagswert (kein Vorjahr)"
+        forderungen = b["forderungen_lul"]
+        vorraete = b["vorraete"]
+        verb_lul = b["verbindlichkeiten_lul"]
     else:
-        tage_hinweis = "Stichtagswert (kein Vorjahr)"
-        forderungen = bilanz["forderungen_lul"]
-        vorraete = bilanz["vorraete"]
-        verb_lul = bilanz["verbindlichkeiten_lul"]
+        hinweis = "Durchschnittsbestand mit Vorjahr"
+        forderungen = durchschnitt(b["forderungen_lul"], b_vorjahr["forderungen_lul"])
+        vorraete = durchschnitt(b["vorraete"], b_vorjahr["vorraete"])
+        verb_lul = durchschnitt(b["verbindlichkeiten_lul"], b_vorjahr["verbindlichkeiten_lul"])
 
     dso = teile(forderungen * 360, umsatz)
-    dio = teile(vorraete * 360, guv["materialaufwand"])
-    dpo = teile(verb_lul * 360, guv["materialaufwand"])
-    k["L05"] = kennzahl(dso, tage_hinweis)
-    k["L06"] = kennzahl(dio, tage_hinweis)
-    k["L07"] = kennzahl(dpo, tage_hinweis)
+    dio = teile(vorraete * 360, g["materialaufwand"])
+    dpo = teile(verb_lul * 360, g["materialaufwand"])
+
+    k["L05"] = kennzahl(dso, hinweis)
+    k["L06"] = kennzahl(dio, hinweis)
+    k["L07"] = kennzahl(dpo, hinweis)
     if dso is None or dio is None or dpo is None:
         k["L08"] = kennzahl(None, "DSO, DIO oder DPO nicht berechenbar")
     else:
-        k["L08"] = kennzahl(dso + dio - dpo, tage_hinweis)
+        k["L08"] = kennzahl(dso + dio - dpo, hinweis)
 
+
+def berechne_kennzahlen(b, g, b_vorjahr=None, g_vorjahr=None):
+    k = {}
+    cashflow, hinweis = berechne_cashflow(b, g, b_vorjahr)
+
+    kennzahlen_kapitalstruktur(b, k)
+    kennzahlen_rentabilitaet(b, g, g_vorjahr, k)
+    kennzahlen_cashflow(b, g, cashflow, hinweis, k)
+    kennzahlen_liquiditaet(b, g, b_vorjahr, k)
     return k
 
 
-def uebersicht_werte(bilanz, guv, kennzahlen):
+def uebersicht_werte(b, g, k):
     kapitaldienst = None
-    if guv["tilgung"] is not None:
-        kapitaldienst = guv["zinsaufwand"] + guv["tilgung"]
+    if g["tilgung"] is not None:
+        kapitaldienst = g["zinsaufwand"] + g["tilgung"]
 
     return {
-        "umsatz": guv["umsatz"],
-        "ebitda": guv["ebitda"],
-        "jahresueberschuss": guv["jahresueberschuss"],
-        "cashflow": kennzahlen["C01"]["wert"],
-        "bilanzsumme": bilanz["bilanzsumme"],
-        "eigenkapital": bilanz["eigenkapital"],
-        "fremdkapital": bilanz["fremdkapital"],
-        "langfr_fk": bilanz["langfr_fk"],
-        "kurzfr_fk": bilanz["kurzfr_fk"],
-        "liquide_mittel": bilanz["liquide_mittel"],
-        "kapitaldienstgrenze": kennzahlen["C05"]["wert"],
+        "umsatz": g["umsatz"],
+        "ebitda": g["ebitda"],
+        "jahresueberschuss": g["jahresueberschuss"],
+        "cashflow": k["C01"]["wert"],
+        "bilanzsumme": b["bilanzsumme"],
+        "eigenkapital": b["eigenkapital"],
+        "fremdkapital": b["fremdkapital"],
+        "langfr_fk": b["langfr_fk"],
+        "kurzfr_fk": b["kurzfr_fk"],
+        "liquide_mittel": b["liquide_mittel"],
+        "kapitaldienstgrenze": k["C05"]["wert"],
         "kapitaldienst": kapitaldienst,
     }
 
 
 def analysiere_alle_jahre(bilanz, guv):
-    bilanz_jahre = hole_gj_liste(bilanz)
-    guv_jahre = hole_gj_liste(guv)
-
-    gemeinsame_jahre = []
-    for jahr in bilanz_jahre:
+    guv_jahre = alle_jahre(guv)
+    jahre = []
+    for jahr in alle_jahre(bilanz):
         if jahr in guv_jahre:
-            gemeinsame_jahre.append(jahr)
+            jahre.append(jahr)
 
-    if not gemeinsame_jahre:
+    if len(jahre) == 0:
         return None, "⚠️ Keine gemeinsamen GJ-Daten in Bilanz und GuV gefunden.", []
 
-    for jahr in gemeinsame_jahre:
-        bilanz_jahr = lade_und_filtere_nach_jahr(bilanz, jahr)
-        if not pruefe_bilanzsumme_fuer_jahr(bilanz_jahr):
-            return None, "⚠️ Bilanzsummen stimmen nicht überein (GJ " + jahr + ": Aktiva ≠ Passiva)", gemeinsame_jahre
+    for jahr in jahre:
+        if not bilanz_geht_auf(zeilen_fuer_jahr(bilanz, jahr)):
+            return None, "⚠️ Bilanzsummen stimmen nicht überein (GJ " + jahr + ": Aktiva ≠ Passiva)", jahre
 
     bilanz_posten = {}
     guv_posten = {}
-    for jahr in gemeinsame_jahre:
-        bilanz_posten[jahr] = sammle_bilanz_posten(lade_und_filtere_nach_jahr(bilanz, jahr))
-        guv_posten[jahr] = sammle_guv_posten(lade_und_filtere_nach_jahr(guv, jahr))
+    for jahr in jahre:
+        bilanz_posten[jahr] = sammle_bilanz_posten(zeilen_fuer_jahr(bilanz, jahr))
+        guv_posten[jahr] = sammle_guv_posten(zeilen_fuer_jahr(guv, jahr))
 
     ergebnisse = []
-    for jahr in gemeinsame_jahre:
+    for jahr in jahre:
         vorjahr = vorjahr_von(jahr)
-        bilanz_vorjahr = None
-        guv_vorjahr = None
-        if vorjahr in bilanz_posten:
-            bilanz_vorjahr = bilanz_posten[vorjahr]
-            guv_vorjahr = guv_posten[vorjahr]
+        b_vorjahr = bilanz_posten.get(vorjahr)
+        g_vorjahr = guv_posten.get(vorjahr)
 
-        kennzahlen = berechne_kennzahlen(bilanz_posten[jahr], guv_posten[jahr], bilanz_vorjahr, guv_vorjahr)
-        werte = uebersicht_werte(bilanz_posten[jahr], guv_posten[jahr], kennzahlen)
-
+        kennzahlen = berechne_kennzahlen(bilanz_posten[jahr], guv_posten[jahr], b_vorjahr, g_vorjahr)
         ergebnisse.append({
             "gj": jahr,
-            "werte": werte,
+            "werte": uebersicht_werte(bilanz_posten[jahr], guv_posten[jahr], kennzahlen),
             "kennzahlen": kennzahlen,
         })
 
-    return ergebnisse, None, gemeinsame_jahre
+    return ergebnisse, None, jahre
 
 
 def zeige_loader(sichtbar):
     loader = document.getElementById("loader")
-    if loader:
-        loader.style.display = "block" if sichtbar else "none"
+    if sichtbar:
+        loader.style.display = "block"
+    else:
+        loader.style.display = "none"
 
 
 @when("click", "#startButton")
 def finanzanalyse_starten(event=None):
-    output = document.getElementById("output")
-    bilanz_el = document.getElementById("data-bilanz")
-    guv_el = document.getElementById("data-guv")
-    branche_el = document.getElementById("branche")
-
-    if not output or not bilanz_el or not guv_el:
-        print("FEHLER: HTML-Elemente nicht gefunden.")
-        return
-
-    bilanz_text = bilanz_el.textContent or ""
-    guv_text = guv_el.textContent or ""
+    ausgabe = document.getElementById("output")
+    bilanz_text = document.getElementById("data-bilanz").textContent or ""
+    guv_text = document.getElementById("data-guv").textContent or ""
+    branche = document.getElementById("branche").value or ""
 
     fehler = pruefe_eingaben(bilanz_text, guv_text)
     if fehler:
-        output.textContent = fehler
+        ausgabe.textContent = fehler
         return
 
     zeige_loader(True)
-    output.textContent = "⏳ Analyse läuft..."
+    ausgabe.textContent = "⏳ Analyse läuft..."
 
     try:
         bilanz = parse_csv(bilanz_text)
         guv = parse_csv(guv_text)
 
-        if not bilanz:
-            output.textContent = "⚠️ Bilanz-Datei ist leer oder ungültig."
+        if len(bilanz) == 0:
+            ausgabe.textContent = "⚠️ Bilanz-Datei ist leer oder ungültig."
             return
-        if not guv:
-            output.textContent = "⚠️ GuV-Datei ist leer oder ungültig."
+        if len(guv) == 0:
+            ausgabe.textContent = "⚠️ GuV-Datei ist leer oder ungültig."
             return
 
-        ok_bilanz, msg_bilanz = pruefe_pflicht_spalten(
-            bilanz,
-            ["Bilanzposition", "Kategorie", "Unterkategorie", "Betrag_EUR", "Seite"],
-            "Bilanz",
-        )
-        ok_guv, msg_guv = pruefe_pflicht_spalten(
-            guv,
-            ["position", "Kategorie", "Betrag_EUR"],
-            "GuV",
-        )
-
-        if not ok_bilanz or not ok_guv:
-            output.textContent = f"{msg_bilanz}\n{msg_guv}"
+        fehlt_bilanz = fehlende_spalten(bilanz, BILANZ_PFLICHT)
+        fehlt_guv = fehlende_spalten(guv, GUV_PFLICHT)
+        if len(fehlt_bilanz) > 0 or len(fehlt_guv) > 0:
+            text = ""
+            if len(fehlt_bilanz) > 0:
+                text += "Bilanz FEHLER: Spalten fehlen: " + ", ".join(fehlt_bilanz) + "\n"
+            if len(fehlt_guv) > 0:
+                text += "GuV FEHLER: Spalten fehlen: " + ", ".join(fehlt_guv)
+            ausgabe.textContent = text
             return
 
         if not hat_jahr_spalte(bilanz):
-            output.textContent = "Bilanz FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
+            ausgabe.textContent = "Bilanz FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
             return
         if not hat_jahr_spalte(guv):
-            output.textContent = "GuV FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
+            ausgabe.textContent = "GuV FEHLER: Spalte GJ/Geschaeftsjahr/Geschäftsjahr fehlt"
             return
 
-        ergebnisse, analyse_fehler, gemeinsame_jahre = analysiere_alle_jahre(bilanz, guv)
-        if analyse_fehler:
-            output.textContent = analyse_fehler
+        ergebnisse, fehler, jahre = analysiere_alle_jahre(bilanz, guv)
+        if fehler:
+            ausgabe.textContent = fehler
             return
 
-        spalten_bilanz = list(bilanz[0].keys())
-        spalten_guv = list(guv[0].keys())
-        output.textContent = (
-            "✅ Dateien erfolgreich geladen\n"
-            f"Bilanz: {len(bilanz)} Zeile(n), Spalten: {', '.join(spalten_bilanz)}\n"
-            f"GuV:    {len(guv)} Zeile(n), Spalten: {', '.join(spalten_guv)}\n"
-            f"GJ gefunden: {', '.join(gemeinsame_jahre)}"
-        )
+        ausgabe.textContent = "✅ Dateien erfolgreich geladen\nGJ gefunden: " + ", ".join(jahre)
 
-        ergebnisse_json = json.dumps(ergebnisse)
-        encoded_results = window.encodeURIComponent(ergebnisse_json)
-        branche = ""
-        if branche_el:
-            branche = branche_el.value or ""
-        encoded_branche = window.encodeURIComponent(branche)
-        window.location.href = f"index2.html?v={VERSION}&results={encoded_results}&branche={encoded_branche}"
+        adresse = "index2.html?v=" + VERSION
+        adresse += "&results=" + window.encodeURIComponent(json.dumps(ergebnisse))
+        adresse += "&branche=" + window.encodeURIComponent(branche)
+        window.location.href = adresse
 
     except Exception as e:
-        output.textContent = f"❌ Fehler: {e}"
+        ausgabe.textContent = "❌ Fehler: " + str(e)
     finally:
         zeige_loader(False)
