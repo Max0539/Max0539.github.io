@@ -3,7 +3,7 @@ import csv
 import json
 
 
-VERSION = "50"
+VERSION = "51"
 
 
 def parse_csv(text):
