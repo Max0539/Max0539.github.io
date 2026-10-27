@@ -1,0 +1,69 @@
+{
+  "name": "keitmann-dashboard",
+  "productName": "Keitmann Dashboard",
+  "version": "1.0.0",
+  "description": "Privates Werkzeug-Dashboard für den PC",
+  "author": "Max Keitmann",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "de.keitmann.dashboard",
+    "productName": "Keitmann Dashboard",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      {
+        "from": "../dashboard",
+        "to": "dashboard",
+        "filter": [
+          "**/*",
+          "!README.md",
+          "!tools/_vorlage.js"
+        ]
+      }
+    ],
+    "icon": "../dashboard/icons/icon-512.png",
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Keitmann Dashboard",
+      "artifactName": "Keitmann-Dashboard-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Keitmann-Dashboard-${version}-portable.exe"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.utilities"
+    }
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  }
+}

@@ -1,0 +1,47 @@
+# Baut das Keitmann Dashboard als Windows-Programm (.exe).
+# Läuft bei Änderungen an dashboard/ oder desktop/ und bei Tags wie v1.0.0.
+# Bei einem Tag wird zusätzlich ein Release mit den .exe-Dateien angelegt.
+name: Desktop-App bauen
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    tags: ["v*"]
+    paths:
+      - "dashboard/**"
+      - "desktop/**"
+      - ".github/workflows/desktop-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - run: npm ci
+
+      - run: npx electron-builder --win --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Keitmann-Dashboard-Windows
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/dist/*.exe

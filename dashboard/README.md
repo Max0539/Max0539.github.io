@@ -12,9 +12,12 @@ Adresse: https://max0539.github.io/dashboard/
 | 1 | PDF-Konverter | Bilder → PDF, PDFs zusammenfügen, Seiten auswählen/drehen/entfernen/einzeln speichern, PDF → Bilder (PNG/JPG), Text → PDF |
 | 2–8 | frei | – |
 
-## Als App auf dem PC installieren
+## Als Programm für den PC
 
-In Chrome oder Edge die Seite öffnen und auf **„Als App installieren“** unten
+Im Ordner `../desktop` wird das Dashboard als Windows-Programm (.exe) verpackt –
+siehe `desktop/README.md`.
+
+Alternativ ohne Download: In Chrome oder Edge die Seite öffnen und auf **„Als App installieren“** unten
 links klicken (oder das Installieren-Symbol in der Adressleiste). Danach
 startet das Dashboard wie ein normales Programm und funktioniert auch offline.
 
