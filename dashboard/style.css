@@ -1,0 +1,622 @@
+:root {
+  --hintergrund: #071A2F;
+  --flaeche: #0C2440;
+  --flaeche-2: #11304F;
+  --rand: #1E3A5F;
+  --text: #E8EEF6;
+  --text-leise: #8AAAC8;
+  --akzent: #4A90E2;
+  --akzent-stark: #2F78D0;
+  --akzent-text: #FFFFFF;
+  --gut: #5DBF8A;
+  --fehler: #E5726B;
+  --schatten: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --radius: 14px;
+  color-scheme: dark;
+}
+
+:root[data-thema="hell"] {
+  --hintergrund: #F2F5F9;
+  --flaeche: #FFFFFF;
+  --flaeche-2: #EAF0F7;
+  --rand: #D4DEEA;
+  --text: #13253A;
+  --text-leise: #5A7290;
+  --akzent: #2F78D0;
+  --akzent-stark: #1F62B3;
+  --gut: #2E9A61;
+  --fehler: #C9443C;
+  --schatten: 0 6px 18px rgba(20, 40, 70, 0.10);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  background: var(--hintergrund);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--akzent);
+}
+
+.versteckt {
+  display: none !important;
+}
+
+/* ---------- Grundaufbau ---------- */
+
+.app {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.seitenleiste {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 14px;
+  background: var(--flaeche);
+  border-right: 1px solid var(--rand);
+  overflow-y: auto;
+}
+
+.marke {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.marke small {
+  display: block;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-gruppe {
+  margin: 12px 10px 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: var(--flaeche-2);
+}
+
+.nav-link.aktiv {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+
+.nav-link.frei {
+  color: var(--text-leise);
+}
+
+.nav-link svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.seitenleiste-fuss {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hauptbereich {
+  min-width: 0;
+  padding: 0 28px 48px;
+}
+
+.kopfleiste {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 0 18px;
+}
+
+.kopfleiste h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.uhr {
+  margin-left: auto;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.menue-knopf {
+  display: none;
+  border: 1px solid var(--rand);
+  background: var(--flaeche);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* ---------- Übersicht ---------- */
+
+.begruessung {
+  margin: 0 0 22px;
+  color: var(--text-leise);
+}
+
+.kachel-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.kachel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 160px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 0.12s, border-color 0.12s;
+}
+
+a.kachel:hover {
+  transform: translateY(-2px);
+  border-color: var(--akzent);
+}
+
+.kachel h3 {
+  margin: 4px 0 0;
+  font-size: 17px;
+}
+
+.kachel p {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 14px;
+}
+
+.kachel-symbol {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+
+.kachel-symbol svg {
+  width: 24px;
+  height: 24px;
+}
+
+.kachel.frei {
+  border-style: dashed;
+  background: transparent;
+}
+
+.kachel.frei .kachel-symbol {
+  background: var(--flaeche-2);
+  color: var(--text-leise);
+}
+
+.hinweis-box {
+  margin-top: 26px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rand);
+  background: var(--flaeche);
+  color: var(--text-leise);
+  font-size: 14px;
+}
+
+/* ---------- Werkzeug-Bausteine ---------- */
+
+.reiter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.reiter button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--rand);
+  background: var(--flaeche);
+  cursor: pointer;
+}
+
+.reiter button.aktiv {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--akzent-text);
+}
+
+.karte {
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+}
+
+.karte h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+
+.karte > p.leise {
+  margin: 0 0 16px;
+}
+
+.leise {
+  color: var(--text-leise);
+}
+
+.ablagezone {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 24px;
+  border: 2px dashed var(--akzent);
+  border-radius: var(--radius);
+  background: var(--flaeche-2);
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ablagezone.drueber {
+  background: color-mix(in srgb, var(--akzent) 22%, var(--flaeche-2));
+}
+
+.ablagezone strong {
+  color: var(--akzent);
+}
+
+.optionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.optionen label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.optionen select,
+.optionen input,
+textarea {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--rand);
+  background: var(--hintergrund);
+  min-width: 140px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.knopfreihe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.knopf {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--akzent);
+  color: var(--akzent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.knopf:hover {
+  background: var(--akzent-stark);
+}
+
+.knopf:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.knopf.zweitrangig {
+  background: var(--flaeche-2);
+  color: var(--text);
+  border: 1px solid var(--rand);
+}
+
+.knopf-leise {
+  padding: 8px 10px;
+  border: 1px solid var(--rand);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-leise);
+  text-align: left;
+  cursor: pointer;
+}
+
+.knopf-leise:hover {
+  color: var(--text);
+}
+
+.mini-knopf {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  background: var(--flaeche);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mini-knopf:hover {
+  border-color: var(--akzent);
+}
+
+/* Dateiliste (Bilder / PDFs) */
+
+.dateiliste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.datei-zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--flaeche-2);
+  border: 1px solid var(--rand);
+}
+
+.datei-zeile img,
+.datei-zeile .platzhalter-bild {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--hintergrund);
+  flex: none;
+}
+
+.datei-zeile .platzhalter-bild {
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fehler);
+}
+
+.datei-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datei-name small {
+  display: block;
+  color: var(--text-leise);
+}
+
+.datei-zeile .aktionen {
+  display: flex;
+  gap: 4px;
+}
+
+/* Seitenvorschau */
+
+.seiten-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.seite-kachel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid var(--rand);
+  background: var(--flaeche-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.seite-kachel.gewaehlt {
+  border-color: var(--akzent);
+  background: color-mix(in srgb, var(--akzent) 16%, var(--flaeche-2));
+}
+
+.seite-bild {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 130px;
+}
+
+.seite-kachel canvas {
+  max-width: 115px;
+  max-height: 115px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+
+.seite-kachel .seiten-nr {
+  font-size: 13px;
+  color: var(--text-leise);
+}
+
+.seite-kachel .drehen {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  right: 6px;
+}
+
+.haken {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  display: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--akzent);
+  color: var(--akzent-text);
+  font-size: 13px;
+  line-height: 22px;
+  text-align: center;
+}
+
+.seite-kachel.gewaehlt .haken {
+  display: block;
+}
+
+.fortschritt {
+  margin-top: 14px;
+  color: var(--text-leise);
+  font-size: 14px;
+}
+
+/* Meldungen unten rechts */
+
+.meldungen {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 50;
+}
+
+.meldung {
+  max-width: 340px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-left: 4px solid var(--gut);
+  box-shadow: var(--schatten);
+}
+
+.meldung.fehler {
+  border-left-color: var(--fehler);
+}
+
+/* ---------- Handy / schmale Fenster ---------- */
+
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .seitenleiste {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 260px;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: var(--schatten);
+  }
+
+  .seitenleiste.offen {
+    transform: none;
+  }
+
+  .menue-knopf {
+    display: block;
+  }
+
+  .hauptbereich {
+    padding: 0 16px 40px;
+  }
+
+  .kopfleiste h1 {
+    font-size: 20px;
+  }
+
+  .uhr {
+    font-size: 13px;
+  }
+}

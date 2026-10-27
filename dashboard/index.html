@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keitmann Dashboard</title>
+  <meta name="description" content="Privates Werkzeug-Dashboard – alles läuft lokal im Browser.">
+  <meta name="theme-color" content="#071A2F">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="app">
+    <aside class="seitenleiste" id="seitenleiste">
+      <a class="marke" href="#/">
+        <img src="icons/icon.svg" alt="" width="34" height="34">
+        <span>Keitmann<small>Dashboard</small></span>
+      </a>
+      <nav class="navigation" id="navigation"></nav>
+      <div class="seitenleiste-fuss">
+        <button class="knopf-leise" id="thema-knopf" type="button">Hell / Dunkel</button>
+        <button class="knopf-leise versteckt" id="installieren-knopf" type="button">Als App installieren</button>
+      </div>
+    </aside>
+
+    <main class="hauptbereich">
+      <header class="kopfleiste">
+        <button class="menue-knopf" id="menue-knopf" type="button" aria-label="Menü">&#9776;</button>
+        <h1 id="seitentitel">Übersicht</h1>
+        <div class="uhr" id="uhr"></div>
+      </header>
+      <section class="inhalt" id="inhalt"></section>
+    </main>
+  </div>
+
+  <div class="meldungen" id="meldungen"></div>
+
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="app.js?v=1"></script>
+  <!-- Werkzeuge: für ein neues Werkzeug einfach eine Datei in tools/ anlegen und hier eintragen -->
+  <script src="tools/pdf.js?v=1"></script>
+</body>
+</html>
